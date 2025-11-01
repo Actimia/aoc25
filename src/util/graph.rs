@@ -1,10 +1,8 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    default,
-};
+use std::collections::BTreeMap;
 
-pub struct Graph<N, E> {
-    nodes: BTreeMap<usize, N>,
+/// Undirected graph where nodes are associated with values of N, and edges are associated with values of E.
+pub struct Graph<V, E> {
+    nodes: BTreeMap<usize, V>,
     edges: BTreeMap<Edge, E>,
 }
 
@@ -80,9 +78,32 @@ impl<N, E> Graph<N, E> {
         self.edges.iter().map(|(edge, v)| ((&edge.0, &edge.1), v))
     }
 
+    /// Takes a path of node indices, returning the edge values between them in order of traversal (if such edges exist)
+    pub fn get_edges<'a>(
+        &self,
+        path: impl Into<&'a [usize]>,
+    ) -> impl Iterator<Item = Option<&'_ E>> {
+        path.into()
+            .windows(2)
+            .map(|edge| self.get_edge(edge[0], edge[1]))
+    }
+
     pub fn add_edge(&mut self, from: usize, to: usize, data: E) -> Option<E> {
         let edge = Edge::new(from, to);
         self.edges.insert(edge, data)
+    }
+
+    pub fn add_edge_map(
+        &mut self,
+        from: usize,
+        to: usize,
+        edge_value: fn(&N, &N) -> E,
+    ) -> Option<E> {
+        let src = self.get_node(from)?;
+        let dst = self.get_node(to)?;
+
+        let edge = Edge::new(from, to);
+        self.edges.insert(edge, edge_value(src, dst))
     }
 
     pub fn remove_edge(&mut self, from: usize, to: usize) -> Option<E> {
@@ -97,28 +118,6 @@ impl<N, E> Graph<N, E> {
     pub fn num_edges(&self) -> usize {
         self.edges.len()
     }
-
-    /*
-    pub fn breadth_first_search(&self, from: usize, to: usize) -> Option<Vec<usize>> {
-        let visited: BTreeSet<usize> = BTreeSet::default();
-
-        None
-    }
-
-    pub fn depth_first_search(&self, from: usize, to: usize) -> Option<Vec<usize>> {
-        let visited: BTreeSet<usize> = BTreeSet::default();
-
-        None
-    }
-
-    pub fn dijkstra(&self, from: usize, to: usize) -> Option<Vec<usize>> {
-        None
-    }
-
-    pub fn astar(&self, from: usize, to: usize) -> Option<Vec<usize>> {
-        None
-    }
-    */
 }
 
 #[cfg(test)]
