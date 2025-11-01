@@ -26,11 +26,11 @@ where
     /// The edge weight could represent a distance, a time, or some other value.
     /// Edge weights must be positive.
     pub fn dijkstra(&self, from: usize, to: usize) -> Option<(E, Vec<usize>)> {
-        let mut weights: Vec<Option<(usize, E)>> = vec![None; self.num_nodes()];
+        let mut weights: Vec<Option<(E, usize)>> = vec![None; self.num_nodes()];
 
         let mut heap: BTreeSet<EdgeCost<E>> = BTreeSet::new();
         heap.insert(EdgeCost(E::zero(), from));
-        weights[from] = Some((from, E::zero()));
+        weights[from] = Some((E::zero(), from));
 
         while !heap.is_empty() {
             let EdgeCost(cost_here, node) = heap.pop_first().expect("is not empty");
@@ -38,7 +38,7 @@ where
             if node == to {
                 let mut path: Vec<usize> = vec![node];
 
-                while let Some((node, _)) = weights[*path.last().unwrap()] {
+                while let Some((_, node)) = weights[*path.last().unwrap()] {
                     path.push(node);
                     if node == from {
                         break;
@@ -53,13 +53,13 @@ where
 
                 // if a path to node with lower cost has already been found, do not consider it further
                 let visited = &weights[next_node];
-                if let Some((_, prev_cost)) = visited
+                if let Some((prev_cost, _)) = visited
                     && *prev_cost < total_to_next
                 {
                     continue;
                 }
 
-                weights[next_node] = Some((node, total_to_next));
+                weights[next_node] = Some((total_to_next, node));
                 heap.insert(EdgeCost(total_to_next, next_node));
             }
         }

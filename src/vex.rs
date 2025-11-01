@@ -2,8 +2,14 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 use num_traits::Zero;
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Vex<T, const DIM: usize>([T; DIM]);
+
+impl<T, const D: usize> Vex<T, D> {
+    pub fn new(vals: impl Into<[T; D]>) -> Self {
+        Vex(vals.into())
+    }
+}
 
 impl<T: Add<Output = T> + Copy + Zero, const D: usize> Add for Vex<T, D> {
     type Output = Self;
