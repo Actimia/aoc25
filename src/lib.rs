@@ -1,4 +1,4 @@
-mod util;
+pub mod graph;
+pub mod graph_algo;
 
-pub use crate::util::graph;
-pub use crate::util::graph_algo;
+pub mod vex;

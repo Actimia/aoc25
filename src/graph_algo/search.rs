@@ -80,7 +80,7 @@ impl<'a, N, E> Iterator for GraphVisitor<'a, N, E> {
     type Item = &'a N;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if dbg!(&self.candidates).is_empty() {
+        if self.candidates.is_empty() {
             return None;
         }
 
