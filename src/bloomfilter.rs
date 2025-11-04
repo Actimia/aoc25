@@ -7,12 +7,19 @@ use std::{
 use num_traits::Euclid;
 
 pub struct BloomFilter<T> {
-  bits: Vec<u64>,
+  bits: Box<[u64]>,
   hashes: usize,
   _marker: PhantomData<T>,
 }
 
 const BITS: usize = std::mem::size_of::<u64>();
+
+fn hash<T: Hash>(item: &T, offset: usize) -> usize {
+  let mut s = DefaultHasher::new();
+  (0x1 << offset).hash(&mut s);
+  item.hash(&mut s);
+  s.finish() as usize
+}
 
 impl<T: Hash> BloomFilter<T> {
   pub fn new(bits: usize, hashes: usize) -> Self {
@@ -20,18 +27,14 @@ impl<T: Hash> BloomFilter<T> {
       panic!("too many hashes")
     }
     Self {
-      bits: vec![0; bits.div_ceil(BITS)],
+      // changing the length of bits would invalidate the entire bloom filter
+      bits: vec![0u64; bits.div_ceil(BITS)].into_boxed_slice(),
       hashes,
       _marker: PhantomData,
     }
   }
 
-  fn hash(item: &T, offset: usize) -> usize {
-    let mut s = DefaultHasher::new();
-    (0x1 << offset).hash(&mut s);
-    (*item).hash(&mut s);
-    s.finish() as usize
-  }
+
 
   pub fn num_hashes(&self) -> usize {
     self.hashes
@@ -53,7 +56,7 @@ impl<T: Hash> BloomFilter<T> {
     let item = item.borrow();
     let num_bits = self.num_bits();
     (0..self.hashes)
-      .map(|x| Self::hash(item, x))
+      .map(|x| hash(item, x))
       .map(|x| x % num_bits)
       .for_each(|idx| {
         // eprintln!("{}", idx);
@@ -66,7 +69,7 @@ impl<T: Hash> BloomFilter<T> {
     let item = item.borrow();
     let num_bits = self.num_bits();
     (0..self.hashes)
-      .map(|x| Self::hash(item, x))
+      .map(|x| hash(item, x))
       .map(|x| x % num_bits)
       .all(|idx| {
         let (word, bit) = idx.div_rem_euclid(&BITS);
