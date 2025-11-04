@@ -1,3 +1,4 @@
+pub mod bloomfilter;
 pub mod graph;
 pub mod graph_algo;
 pub mod grid;
