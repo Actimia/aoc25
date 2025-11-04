@@ -34,8 +34,6 @@ impl<T: Hash> BloomFilter<T> {
     }
   }
 
-
-
   pub fn num_hashes(&self) -> usize {
     self.hashes
   }
@@ -63,7 +61,7 @@ impl<T: Hash> BloomFilter<T> {
         let (word, bit) = idx.div_rem_euclid(&BITS);
         self.bits[word] |= 0x1 << bit;
       })
-    }
+  }
 
   pub fn has(&self, item: impl Borrow<T>) -> bool {
     let item = item.borrow();
@@ -104,7 +102,6 @@ impl<T: Hash> BloomFilter<T> {
     let exp = (-k * n / m).exp();
     (1.0 - exp).powf(k)
   }
-
 }
 
 #[cfg(test)]
@@ -144,7 +141,7 @@ mod tests {
     assert!(bf.approx_items() < upper_limit);
   }
 
-    #[test]
+  #[test]
   fn test_false_positive_chance() {
     let num = 100;
     let bf = {
