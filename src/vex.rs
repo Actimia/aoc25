@@ -1,6 +1,7 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
-
-use num_traits::Zero;
+use std::{
+  array::{self},
+  ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+};
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Vex<T, const DIM: usize>([T; DIM]);
@@ -17,85 +18,61 @@ impl<T: Default + Copy, const D: usize> Default for Vex<T, D> {
   }
 }
 
-impl<T: Add<Output = T> + Copy + Zero, const D: usize> Add for Vex<T, D> {
+impl<T: Add<Output = T> + Copy, const D: usize> Add for Vex<T, D> {
   type Output = Self;
 
   fn add(self, rhs: Self) -> Self::Output {
-    let mut res = [T::zero(); D];
-    res
-      .iter_mut()
-      .enumerate()
-      .for_each(|(i, x)| *x = self.0[i] + rhs.0[i]);
-    Self(res)
+    Self(array::from_fn(|i| self.0[i] + rhs.0[i]))
   }
 }
 
-impl<T: AddAssign + Copy + Zero, const D: usize> AddAssign for Vex<T, D> {
+impl<T: Add<Output = T> + Copy, const D: usize> AddAssign for Vex<T, D> {
   fn add_assign(&mut self, rhs: Self) {
-    self
-      .0
-      .iter_mut()
-      .enumerate()
-      .for_each(|(i, x)| *x += rhs.0[i]);
+    for (x, rx) in self.0.iter_mut().zip(rhs.0) {
+      *x = *x + rx
+    }
   }
 }
 
-impl<T: Sub<Output = T> + Copy + Zero, const D: usize> Sub for Vex<T, D> {
+impl<T: Sub<Output = T> + Copy, const D: usize> Sub for Vex<T, D> {
   type Output = Self;
 
   fn sub(self, rhs: Self) -> Self::Output {
-    let mut res = [T::zero(); D];
-    res
-      .iter_mut()
-      .enumerate()
-      .for_each(|(i, x)| *x = self.0[i] - rhs.0[i]);
-    Self(res)
+    Self(array::from_fn(|i| self.0[i] - rhs.0[i]))
   }
 }
 
-impl<T: SubAssign + Copy + Zero, const D: usize> SubAssign for Vex<T, D> {
+impl<T: Sub<Output = T> + Copy, const D: usize> SubAssign for Vex<T, D> {
   fn sub_assign(&mut self, rhs: Self) {
-    self
-      .0
-      .iter_mut()
-      .enumerate()
-      .for_each(|(i, x)| *x -= rhs.0[i]);
+    for (x, rx) in self.0.iter_mut().zip(rhs.0) {
+      *x = *x - rx
+    }
   }
 }
 
-impl<T: Mul<Output = T> + Copy + Zero, const D: usize> Mul<T> for Vex<T, D> {
+impl<T: Mul<Output = T> + Copy, const D: usize> Mul<T> for Vex<T, D> {
   type Output = Self;
 
   fn mul(self, rhs: T) -> Self::Output {
-    let mut res = [T::zero(); D];
-    res
-      .iter_mut()
-      .enumerate()
-      .for_each(|(i, x)| *x = self.0[i] * rhs);
-    Self(res)
+    Self(array::from_fn(|i| self.0[i] * rhs))
   }
 }
 
-impl<T: MulAssign + Copy + Zero, const D: usize> MulAssign<T> for Vex<T, D> {
+impl<T: MulAssign + Copy, const D: usize> MulAssign<T> for Vex<T, D> {
   fn mul_assign(&mut self, rhs: T) {
     self.0.iter_mut().for_each(|x| *x *= rhs);
   }
 }
 
-impl<T: Div<Output = T> + Copy + Zero, const D: usize> Div<T> for Vex<T, D> {
+impl<T: Div<Output = T> + Copy, const D: usize> Div<T> for Vex<T, D> {
   type Output = Self;
 
   fn div(self, rhs: T) -> Self::Output {
-    let mut res = [T::zero(); D];
-    res
-      .iter_mut()
-      .enumerate()
-      .for_each(|(i, x)| *x = self.0[i] / rhs);
-    Self(res)
+    Self(array::from_fn(|i| self.0[i] / rhs))
   }
 }
 
-impl<T: DivAssign + Copy + Zero, const D: usize> DivAssign<T> for Vex<T, D> {
+impl<T: DivAssign + Copy, const D: usize> DivAssign<T> for Vex<T, D> {
   fn div_assign(&mut self, rhs: T) {
     self.0.iter_mut().for_each(|x| *x /= rhs);
   }

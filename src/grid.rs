@@ -102,6 +102,20 @@ impl<T> Grid<T> {
   pub fn dimensions(&self) -> (usize, usize) {
     (self.rows, self.cols)
   }
+
+  pub fn iter(&self) -> impl Iterator<Item = &T> {
+    self.data.iter()
+  }
+}
+
+impl<T> IntoIterator for Grid<T> {
+  type Item = T;
+
+  type IntoIter = std::vec::IntoIter<T>;
+
+  fn into_iter(self) -> Self::IntoIter {
+    self.data.into_iter()
+  }
 }
 
 struct StepIterator<'a, T> {
