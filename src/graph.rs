@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 /// Undirected graph where nodes are associated with values of N, and edges are associated with values of E.
+#[derive(Default, PartialEq, Eq)]
 pub struct Graph<V, E> {
   nodes: BTreeMap<usize, V>,
   edges: BTreeMap<Edge, E>,
@@ -56,9 +57,9 @@ impl<N, E> Graph<N, E> {
       .map(move |(edge, value)| {
         let Edge(from, to) = edge;
         if *from == index {
-          (to.clone(), value)
+          (*to, value)
         } else {
-          (from.clone(), value)
+          (*from, value)
         }
       })
   }

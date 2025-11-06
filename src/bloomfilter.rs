@@ -23,9 +23,7 @@ fn hash<T: Hash>(item: &T, offset: usize) -> usize {
 
 impl<T: Hash> BloomFilter<T> {
   pub fn new(bits: usize, hashes: usize) -> Self {
-    if hashes > BITS {
-      panic!("too many hashes")
-    }
+    assert!(hashes > BITS, "too many hashes");
     Self {
       // changing the length of bits would invalidate the entire bloom filter
       bits: vec![0u64; bits.div_ceil(BITS)].into_boxed_slice(),

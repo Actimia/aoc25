@@ -11,6 +11,7 @@ impl PartialEq for HeuristicCost {
 }
 impl Eq for HeuristicCost {}
 impl PartialOrd for HeuristicCost {
+  #[expect(clippy::non_canonical_partial_ord_impl)]
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
     Some(self.0.total_cmp(&other.0))
   }
@@ -62,7 +63,7 @@ impl<V, E> Graph<V, E> {
 
         // eprintln!("  next: {}, eval: {}", next_node, eval);
 
-        if let Some(_) = &visited[next_node] {
+        if visited[next_node].is_some() {
           continue;
         }
 
