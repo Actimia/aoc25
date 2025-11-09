@@ -3,9 +3,11 @@ use std::{
   ops::{Index, IndexMut},
 };
 
+use num_traits::Euclid;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Grid<T> {
-  data: Vec<T>,
+  data: Box<[T]>,
   rows: usize,
   cols: usize,
 }
@@ -25,13 +27,28 @@ impl<T: Display> Display for Grid<T> {
 impl<T: Sized + Copy> Grid<T> {
   pub fn new(rows: usize, cols: usize, default: T) -> Self {
     Self {
+      data: vec![default; rows * cols].into_boxed_slice(),
       rows,
       cols,
-      data: vec![default; rows * cols],
     }
   }
 }
+
 impl<T> Grid<T> {
+  /// Takes data stored in row-wise format and creates a Grid over it.
+  /// Returns `None` if  `data.len()` is not a multiple of `cols`.
+  pub fn from_data(data: Vec<T>, cols: usize) -> Option<Self> {
+    let (rows, rem) = data.len().div_rem_euclid(&cols);
+    if rem != 0 {
+      return None;
+    }
+    Some(Self {
+      data: data.into_boxed_slice(),
+      rows,
+      cols,
+    })
+  }
+
   /// Computes the actual data index of a coordinate pair. Returns None if the coordinates were invalid.
   fn get_index(&self, row: usize, col: usize) -> Option<usize> {
     if self.rows <= row || self.cols <= col {
@@ -184,19 +201,27 @@ mod tests {
     assert_eq!(g[(0, 1)], 4.0);
   }
 
+  #[test]
+  fn test_from_data() {
+    let g = Grid::from_data(vec![1, 2, 3, 4, 5, 6], 3).unwrap();
+    assert_eq!(g.dimensions(), (2, 3));
+    assert_eq!(g[(1, 1)], 5);
+    assert_eq!(g.get(4, 1), None);
+  }
+
   #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-  enum TestValues {
+  enum TicTacToe {
     Empty,
     Naught,
     Cross,
   }
 
-  impl Display for TestValues {
+  impl Display for TicTacToe {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
       match self {
-        TestValues::Empty => write!(f, " "),
-        TestValues::Naught => write!(f, "o"),
-        TestValues::Cross => write!(f, "x"),
+        TicTacToe::Empty => write!(f, " "),
+        TicTacToe::Naught => write!(f, "o"),
+        TicTacToe::Cross => write!(f, "x"),
       }
     }
   }
@@ -204,10 +229,10 @@ mod tests {
   #[test]
   fn test_display() {
     let size = 4;
-    let mut g = Grid::new(size, size, TestValues::Empty);
+    let mut g = Grid::new(size, size, TicTacToe::Empty);
     for i in 0..size {
-      g[(i, i)] = TestValues::Naught;
-      g[(size - i - 1, i)] = TestValues::Cross;
+      g[(i, i)] = TicTacToe::Naught;
+      g[(size - i - 1, i)] = TicTacToe::Cross;
     }
 
     let x = format!("{}", g);
