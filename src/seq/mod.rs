@@ -2,12 +2,23 @@ use std::iter::Peekable;
 
 use crate::exts::IteratorExt;
 
+// Introduce own trait for infinite sequences?
+// Pros:
+//  - Can have Option<i8> instead of SILENCE sentinel
+//  - Could return Silence/Note(i8)/Sustain enum
+// Cons:
+//  - No iterator interop
+//  - Would have to reimpl a bunch of iterator methods (which might be fun)
+
 pub trait Sequence: Iterator<Item = i8> {}
 
 impl<T: Iterator<Item = i8>> Sequence for T {}
 
+pub const SILENCE: i8 = i8::MIN;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum SeqToken {
+  Silence,
   Repeat,
   Num(i8),
   SubSequence(Seq),
@@ -140,6 +151,10 @@ impl TryFrom<&str> for Seq {
             chars.next();
             res.push(SeqToken::Repeat)
           }
+          '.' => {
+            chars.next();
+            res.push(SeqToken::Silence)
+          }
           tok => anyhow::bail!("unexpected token: {}", tok),
         }
       }
@@ -163,6 +178,7 @@ impl Iterator for Seq {
       index
     };
     let res = match self.pattern.get_mut(index).unwrap() {
+      SeqToken::Silence => SILENCE,
       SeqToken::Repeat => self.last,
       SeqToken::Num(num) => *num,
       SeqToken::SubSequence(pattern_seq) => pattern_seq.next().expect("infinite iterator"),

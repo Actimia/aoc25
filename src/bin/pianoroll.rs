@@ -1,6 +1,6 @@
 use std::{env, time::Duration};
 
-use aoc25::seq::Seq;
+use aoc25::seq::{SILENCE, Seq};
 use itertools::Itertools;
 
 fn main() {
@@ -23,6 +23,7 @@ fn main() {
     for note in patterns
       .iter_mut()
       .map(|pat| pat.next().unwrap())
+      .filter(|x| *x != SILENCE)
       .map(|x| ((x + 30) as usize).clamp(0, 88))
       .unique()
       .sorted()
