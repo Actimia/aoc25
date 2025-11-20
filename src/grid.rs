@@ -1,11 +1,11 @@
 use std::{
-  fmt::Display,
+  fmt::{Debug, Display},
   ops::{Index, IndexMut},
 };
 
 use num_traits::Euclid;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Grid<T> {
   data: Box<[T]>,
   rows: usize,
@@ -16,7 +16,7 @@ impl<T: Display> Display for Grid<T> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     for row in 0..self.rows {
       for col in 0..self.cols {
-        write!(f, "{} ", self[(row, col)])?;
+        write!(f, "{}", self[(row, col)])?;
       }
       writeln!(f)?
     }
@@ -49,6 +49,14 @@ impl<T> Grid<T> {
     })
   }
 
+  pub fn rows(&self) -> usize {
+    self.rows
+  }
+
+  pub fn cols(&self) -> usize {
+    self.cols
+  }
+
   /// Computes the actual data index of a coordinate pair. Returns None if the coordinates were invalid.
   fn get_index(&self, row: usize, col: usize) -> Option<usize> {
     if self.rows <= row || self.cols <= col {
@@ -56,6 +64,51 @@ impl<T> Grid<T> {
     } else {
       Some(row * self.cols + col)
     }
+  }
+
+  pub fn rotate_rows(&mut self, n: isize) {
+    // push each row down n, filling with rows from the bottom
+    let offset = n * self.cols as isize;
+
+    if offset.is_positive() {
+      self.data.rotate_right(offset as usize);
+    } else {
+      self.data.rotate_left((-offset) as usize);
+    }
+  }
+
+  pub fn rotate_cols(&mut self, offset: isize) {
+    // push each col right by n, filling with cols from the left
+
+    for col in self.data.chunks_exact_mut(self.cols) {
+      if offset.is_positive() {
+        col.rotate_right(offset as usize);
+      } else {
+        col.rotate_left((-offset) as usize);
+      }
+    }
+  }
+
+  pub fn step(
+    &self,
+    from: (usize, usize),
+    step: (isize, isize),
+  ) -> impl Iterator<Item = (&T, (usize, usize))> {
+    StepIterator {
+      grid: self,
+      cursor: from,
+      step,
+    }
+  }
+
+  pub fn iter_row(&self, row: usize) -> impl Iterator<Item = &T> {
+    // let offset = self.get_index(row, 0)?.checked_sub(1).unwrap_or(0);
+    // Some(self.data.iter().skip(offset).step_by(self.cols))
+    self.step((row, 0), (0, 1)).map(|(x, _)| x)
+  }
+
+  pub fn iter_col(&self, col: usize) -> impl Iterator<Item = &T> {
+    self.step((0, col), (1, 0)).map(|(x, _)| x)
   }
 
   /// Gets a reference to a cell in the grid. Returns None if the coordinates were invalid.
@@ -102,20 +155,6 @@ impl<T> Grid<T> {
     neighbors.into_iter().flatten()
   }
 
-  pub fn step(
-    &self,
-    from: (usize, usize),
-    step: (isize, isize),
-    wrapping: bool,
-  ) -> impl Iterator<Item = (&T, (usize, usize))> {
-    StepIterator {
-      grid: self,
-      cursor: from,
-      step,
-      wrapping,
-    }
-  }
-
   pub fn dimensions(&self) -> (usize, usize) {
     (self.rows, self.cols)
   }
@@ -139,36 +178,16 @@ struct StepIterator<'a, T> {
   grid: &'a Grid<T>,
   cursor: (usize, usize),
   step: (isize, isize),
-  wrapping: bool,
 }
 
 impl<'a, T> Iterator for StepIterator<'a, T> {
   type Item = (&'a T, (usize, usize));
 
   fn next(&mut self) -> Option<Self::Item> {
-    let row = if self.wrapping {
-      self
-        .step
-        .0
-        .checked_add_unsigned(self.cursor.0)?
-        .rem_euclid(self.grid.rows as isize) as usize
-    } else {
-      self.cursor.0.checked_add_signed(self.step.0)?
-    };
-    let col = if self.wrapping {
-      self
-        .step
-        .1
-        .checked_add_unsigned(self.cursor.1)?
-        .rem_euclid(self.grid.cols as isize) as usize
-    } else {
-      self.cursor.1.checked_add_signed(self.step.1)?
-    };
+    let row = self.cursor.0.checked_add_signed(self.step.0)?;
+    let col = self.cursor.1.checked_add_signed(self.step.1)?;
     self.cursor = (row, col);
-    self
-      .grid
-      .get(self.cursor.0, self.cursor.1)
-      .map(|value| (value, self.cursor))
+    self.grid.get(row, col).map(|value| (value, self.cursor))
   }
 }
 
@@ -236,7 +255,7 @@ mod tests {
     }
 
     let x = format!("{}", g);
-    assert_eq!(x, "o     x \n  o x   \n  x o   \nx     o \n");
+    assert_eq!(x, "o  x\n ox \n xo \nx  o\n");
   }
 
   #[test]
@@ -253,20 +272,47 @@ mod tests {
     };
 
     eprintln!("{}", grid);
-    let steps: Vec<usize> = grid.step((0, 0), (0, 1), false).map(|s| *s.0).collect();
+    let steps: Vec<usize> = grid.step((0, 0), (0, 1)).map(|s| *s.0).collect();
     assert_eq!(steps, vec![1, 2, 3, 4]);
 
-    let steps: Vec<usize> = grid.step((0, 0), (1, 0), false).map(|s| *s.0).collect();
+    let steps: Vec<usize> = grid.step((0, 0), (1, 0)).map(|s| *s.0).collect();
     assert_eq!(steps, vec![5, 10, 15, 20]);
 
-    let steps: Vec<usize> = grid.step((0, 0), (1, 1), false).map(|s| *s.0).collect();
+    let steps: Vec<usize> = grid.step((0, 0), (1, 1)).map(|s| *s.0).collect();
     assert_eq!(steps, vec![6, 12, 18, 24]);
+  }
 
-    let steps: Vec<usize> = grid
-      .step((0, 0), (2, -1), true)
-      .take(6)
-      .map(|s| *s.0)
-      .collect();
-    assert_eq!(steps, vec![14, 23, 7, 16, 0, 14]);
+  #[test]
+  fn test_rotate_rows() {
+    let init = Grid::from_data(vec![1, 2, 3, 4, 5, 6], 2).unwrap();
+    let mut grid = init.clone();
+
+    let grid2 = Grid::from_data(vec![5, 6, 1, 2, 3, 4], 2).unwrap();
+
+    grid.rotate_rows(1);
+    assert_eq!(grid, grid2);
+
+    let mut rotated1 = init.clone();
+    let mut rotated2 = init.clone();
+    rotated1.rotate_rows(2);
+    rotated2.rotate_rows(-1);
+    assert_eq!(rotated1, rotated2);
+  }
+
+  #[test]
+  fn test_rotate_cols() {
+    let init = Grid::from_data(vec![1, 2, 3, 4, 5, 6], 3).unwrap();
+    let mut grid = init.clone();
+
+    let grid2 = Grid::from_data(vec![3, 1, 2, 6, 4, 5], 3).unwrap();
+
+    grid.rotate_cols(1);
+    assert_eq!(grid, grid2);
+
+    let mut rotated1 = init.clone();
+    let mut rotated2 = init.clone();
+    rotated1.rotate_cols(2);
+    rotated2.rotate_cols(-1);
+    assert_eq!(rotated1, rotated2);
   }
 }
