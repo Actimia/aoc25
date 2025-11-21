@@ -81,7 +81,7 @@ impl From<i8> for Seq {
 
 impl From<&[i8]> for Seq {
   fn from(value: &[i8]) -> Self {
-    Self::new(value.into_iter().copied().map(SeqToken::Num).collect())
+    Self::new(value.iter().copied().map(SeqToken::Num).collect())
   }
 }
 
@@ -103,11 +103,11 @@ impl TryFrom<&str> for Seq {
   fn try_from(text: &str) -> Result<Self, Self::Error> {
     fn read_num<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> anyhow::Result<i8> {
       fn to_num(c: char) -> i8 {
-        ((c as u8) - ('0' as u8)) as i8
+        ((c as u8) - b'0') as i8
       }
       let mut acc: i8 = 0;
       while let Some(c) = chars.peek() {
-        let c = c.clone();
+        let c = *c;
         if c.is_numeric() {
           chars.next();
           acc = acc
@@ -125,7 +125,7 @@ impl TryFrom<&str> for Seq {
     fn parse<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> anyhow::Result<Vec<SeqToken>> {
       let mut res = vec![];
       while let Some(c) = chars.peek() {
-        let c = c.clone();
+        let c = *c;
         match c {
           ' ' => {
             chars.next();

@@ -79,7 +79,7 @@ impl<M: Hash + Eq + Clone, T, I: Iterator<Item = T>, F: FnMut(&T) -> M> Iterator
   type Item = T;
 
   fn next(&mut self) -> Option<Self::Item> {
-    while let Some(next) = self.inner.next() {
+    for next in self.inner.by_ref() {
       let mapped = (self.mapper)(&next);
       if self.seen.contains(&mapped) {
         continue;
