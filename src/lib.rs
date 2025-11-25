@@ -1,4 +1,5 @@
 pub mod bloomfilter;
+pub mod events;
 pub mod exts;
 pub mod graph;
 pub mod graph_algo;
