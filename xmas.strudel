@@ -1,0 +1,41 @@
+setcpm(80)
+
+const melody = `<~ ~ ~ 3
+         3@2 0 3
+         4@2 0@2
+         5 4 5 6b
+         5@2 4 3
+         3@2 2 1
+         2 3 4 5
+         2@2 1 0
+         0@4
+         >*4`
+const scale = "d:major"
+$: s("[bd sd bd sd]").bank("RolandTR909").dec(.4)
+$: s("[hh ~ ~ <hh oh>]").bank("RolandTR909").dec(.8).room(.8)
+
+$: note(melody)
+  .scale(scale)
+  .trans(0)
+  .sound("pulse")
+  .pan(rand)
+  .room(.8)
+  ._pianoroll()
+
+$: note(melody)
+  .scale(scale)
+  .pan(rand)
+  .trans(12)
+  .room(.8)
+  .sound("gm_tubular_bells")
+
+$: note("<3 0 <-1 5> 0>")
+  .scale(scale)
+  .trans(-24)
+  .sound("supersaw")
+  .delay(rand)
+  .detune(rand)
+  .decay(.4)
+
+$: sound("bd*2,<pink ~ ~ white>*4")
+  .decay(.1).sustain(0.2).gain(.25)._scope()

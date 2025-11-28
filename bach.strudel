@@ -1,0 +1,33 @@
+setcpm(70)
+
+const melody = "<0 2 4 7 9 4 7 9>*8"
+const prog = "<0 1 3 -1 5>/2"
+const scales = "<a:minor a:major a:mixolydian>/15"
+
+$: s("[bd hh bd <hh oh>]").bank("tr909").dec(.4)
+$: s("clap ~ clap <~ cr>")
+
+$: note(melody.add(prog))
+  .scale(scales)
+  .sound("pulse")
+  .room(.8)
+  .pan(rand)
+  ._pianoroll()
+
+$: note(melody.add(prog))
+  .scale(scales)
+  .sound("gm_harpsichord")
+  .trans(-12)
+  .room(.8)
+  .pan(rand)
+  ._pianoroll()
+
+$: note("<0 0>*2".add(prog))
+  .scale(scales)
+  .trans(-12)
+  .sound("supersaw")
+  .detune(rand)
+  .decay(.4)
+
+$: sound("bd*2,<white pink brown white>*8")
+  .decay(.04).sustain(0)._scope()

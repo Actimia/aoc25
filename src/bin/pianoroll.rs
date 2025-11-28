@@ -49,7 +49,7 @@ fn main() {
     Duration::from_secs_f64(60.0 / tempo)
   };
 
-  let mut grid = Grid::new(24, 40, PianoRoll::Silence);
+  let mut grid = Grid::new(24, 60, PianoRoll::Silence);
 
   loop {
     for x in 0..grid.rows() {
