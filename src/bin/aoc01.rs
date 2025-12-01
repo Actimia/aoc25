@@ -3,7 +3,7 @@ use anyhow::{bail, ensure};
 const INPUT: &'static str = include_str!("data/01.txt");
 
 #[derive(Debug, PartialEq, Eq)]
-struct Turn(i32);
+struct Turn(i64);
 
 impl TryFrom<&str> for Turn {
   type Error = anyhow::Error;
@@ -18,33 +18,26 @@ impl TryFrom<&str> for Turn {
   }
 }
 
+fn multiples_of_100_between(a: i64, b: i64) -> u64 {
+  let high = (a.max(b) as f64 / 100.).floor() as i64;
+  let low = (a.min(b) as f64 / 100.).ceil() as i64;
+  let adj = if a % 100 == 0 { 0 } else { 1 }; // do not count the starting point
+  (high - low + adj) as u64
+}
+
 fn main() {
   let turns = INPUT.lines().map(Turn::try_from).flatten();
 
-  let mut zeros = 0;
-  let mut acc = 50;
+  let mut zeroes: u64 = 0;
+  let mut total: i64 = 50;
   for Turn(turn) in turns {
-    let mut this_zeros = 0;
-
-    let step = turn.signum();
-    let count = turn.abs();
-    for _ in 0..count {
-      acc += step;
-      if acc == 100 {
-        acc = 0;
-      } else if acc == -1 {
-        acc = 99;
-      }
-
-      if acc == 0 {
-        this_zeros += 1;
-      }
-    }
-
-    eprintln!("Turned {} to {} ({} + {})", turn, acc, zeros, this_zeros);
-    zeros += this_zeros;
+    let prev = total;
+    total += turn;
+    let new_zeroes = multiples_of_100_between(prev, total);
+    eprintln!("Turned {} to {} ({} + {})", turn, total, zeroes, new_zeroes);
+    zeroes += new_zeroes;
   }
-  println!("{zeros}");
+  println!("{zeroes}");
 }
 
 #[cfg(test)]
@@ -64,5 +57,12 @@ mod tests {
 
     let a: Result<Turn, _> = "Q3".try_into();
     assert!(a.is_err());
+  }
+
+  #[test]
+  fn test_multiples_between() {
+    assert_eq!(multiples_of_100_between(101, 300), 2);
+    assert_eq!(multiples_of_100_between(-101, 300), 5);
+    assert_eq!(multiples_of_100_between(-1, 1), 1);
   }
 }
