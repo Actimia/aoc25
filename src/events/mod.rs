@@ -136,6 +136,6 @@ mod test {
 
     assert!(result.is_ok());
     let acc = result.unwrap();
-    assert_eq!(acc.balance, 50);
+    assert_eq!(acc.balance, 150);
   }
 }

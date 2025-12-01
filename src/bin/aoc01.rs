@@ -1,22 +1,21 @@
+use anyhow::{bail, ensure};
+
 const INPUT: &'static str = include_str!("data/01.txt");
 
 #[derive(Debug, PartialEq, Eq)]
 struct Turn(i32);
 
 impl TryFrom<&str> for Turn {
-  fn try_from(value: &str) -> Result<Turn, anyhow::Error> {
-    if let Some(value) = value.strip_prefix('R') {
-      let value = value.parse::<i32>()?;
-      Ok(Turn(value))
-    } else if let Some(value) = value.strip_prefix('L') {
-      let value = value.parse::<i32>()?;
-      Ok(Turn(-value))
-    } else {
-      anyhow::bail!("invalid input")
-    }
-  }
-
   type Error = anyhow::Error;
+
+  fn try_from(value: &str) -> Result<Turn, anyhow::Error> {
+    ensure!(value.len() >= 2, "input too short");
+    Ok(match value.split_at(1) {
+      ("R", val) => Turn(val.parse()?),
+      ("L", val) => Turn(-val.parse()?),
+      _ => bail!("invalid input"),
+    })
+  }
 }
 
 fn main() {
@@ -42,8 +41,28 @@ fn main() {
       }
     }
 
-    println!("Turned {} to {} ({} + {})", turn, acc, zeros, this_zeros);
+    eprintln!("Turned {} to {} ({} + {})", turn, acc, zeros, this_zeros);
     zeros += this_zeros;
   }
   println!("{zeros}");
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_parsing() {
+    let a: Turn = "R56".try_into().unwrap();
+    assert_eq!(a.0, 56);
+
+    let a: Turn = "L33".try_into().unwrap();
+    assert_eq!(a.0, -33);
+
+    let a: Turn = "L133".try_into().unwrap();
+    assert_eq!(a.0, -133);
+
+    let a: Result<Turn, _> = "Q3".try_into();
+    assert!(a.is_err());
+  }
 }
