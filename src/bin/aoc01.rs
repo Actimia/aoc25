@@ -1,6 +1,6 @@
 use anyhow::{bail, ensure};
 
-const INPUT: &'static str = include_str!("data/01.txt");
+const INPUT: &str = include_str!("data/01.txt");
 
 #[derive(Debug, PartialEq, Eq)]
 struct Turn(i64);
@@ -26,7 +26,7 @@ fn multiples_of_100_between(a: i64, b: i64) -> u64 {
 }
 
 fn main() {
-  let turns = INPUT.lines().map(Turn::try_from).flatten();
+  let turns = INPUT.lines().flat_map(Turn::try_from);
 
   let mut zeroes: u64 = 0;
   let mut total: i64 = 50;

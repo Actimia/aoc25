@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use itertools::Itertools;
 
-const INPUT: &'static str = include_str!("data/02.txt");
+const INPUT: &str = include_str!("data/02.txt");
 
 struct IdRange {
   min: u64,
@@ -49,7 +49,7 @@ fn is_invalid_id2(id: &u64) -> bool {
 }
 
 fn main() -> anyhow::Result<()> {
-  let ranges = INPUT.split(',').map(IdRange::try_from).flatten();
+  let ranges = INPUT.split(',').flat_map(IdRange::try_from);
 
   let mut total = 0u64;
   for IdRange { min, max } in ranges {

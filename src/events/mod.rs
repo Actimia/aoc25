@@ -22,7 +22,7 @@ where
     I: IntoIterator<Item = Self::Event>,
   {
     let res: Self = Default::default();
-    res.add_events(events.into_iter())
+    res.add_events(events)
   }
 }
 
