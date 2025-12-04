@@ -155,6 +155,10 @@ impl<T> Grid<T> {
     neighbors.into_iter().flatten()
   }
 
+  pub fn count_neighbors(&self, row: usize, col: usize, pred: impl Fn(&T) -> bool) -> usize {
+    self.neighbors(row, col).filter(|v| pred(*v)).count()
+  }
+
   pub fn dimensions(&self) -> (usize, usize) {
     (self.rows, self.cols)
   }

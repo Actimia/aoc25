@@ -30,70 +30,61 @@ fn parse_grid(input: &str) -> Grid<Map> {
     .flatten()
     .collect();
 
-  eprintln!("{}", data.len());
-
   let cols = data.len() / rows;
   eprintln!("{rows}x{cols}");
   Grid::from_data(data, cols).unwrap()
 }
 
-#[allow(unused)]
-fn part_one(grid: Grid<Map>) -> u64 {
-  let mut accessible = 0u64;
-  for (row, col, cell) in grid.cells() {
-    if !matches!(cell, Map::Roll) {
-      continue;
-    }
-    let neighbor_rolls = grid
-      .neighbors(row, col)
-      .filter(|c| matches!(c, Map::Roll))
-      .count();
-    if neighbor_rolls < 4 {
-      accessible += 1;
-    }
-  }
-  accessible
+fn find_accessible(grid: &Grid<Map>) -> impl Iterator<Item = (usize, usize, &Map)> {
+  const MAX_NEIGHBORS: usize = 4;
+
+  grid
+    .cells()
+    .filter(|(_, _, c)| matches!(c, Map::Roll))
+    .filter(|(row, col, _)| {
+      grid.count_neighbors(*row, *col, |c| matches!(c, Map::Roll)) < MAX_NEIGHBORS
+    })
 }
 
 #[allow(unused)]
-fn part_two(grid: Grid<Map>) -> u64 {
-  let mut accessible = 0u64;
+fn part_one(grid: Grid<Map>) -> usize {
+  // 1376
+  find_accessible(&grid).count()
+}
 
-  fn step(grid: &Grid<Map>) -> (Grid<Map>, u64) {
+#[allow(unused)]
+fn part_two(grid: Grid<Map>) -> usize {
+  // 8587
+  fn remove_accessible(grid: &Grid<Map>) -> (Grid<Map>, usize) {
     let mut next = grid.clone();
-    let mut num_removed = 0u64;
-    for (row, col, data) in grid.cells().filter(|(_, _, c)| **c == Map::Roll) {
-      let neighbor_rolls = grid
-        .neighbors(row, col)
-        .filter(|c| matches!(c, Map::Roll))
-        .count();
-      if neighbor_rolls < 4 {
-        next[(row, col)] = Map::None;
-        num_removed += 1
-      }
+    let mut removed = 0;
+    for (row, col, _) in find_accessible(&grid) {
+      next[(row, col)] = Map::None;
+      removed += 1
     }
-    (next, num_removed)
+    (next, removed)
   }
 
-  let mut total = 0u64;
+  let mut total_removed = 0;
   let mut grid = grid;
   loop {
-    let (next, removed) = step(&grid);
-    total += removed;
+    let (next, removed) = remove_accessible(&grid);
+    total_removed += removed;
     grid = next;
     if removed == 0 {
       break;
     }
   }
-  total
+  total_removed
 }
 
 fn main() -> anyhow::Result<()> {
   let grid = parse_grid(INPUT);
+  let part_one = part_one(grid.clone());
+  println!("Part I: {part_one}");
 
-  let accessible = part_two(grid);
-
-  println!("{accessible}");
+  let part_two = part_two(grid);
+  println!("Part II: {part_two}");
   Ok(())
 }
 
