@@ -3,6 +3,7 @@ use std::{
   ops::{Index, IndexMut},
 };
 
+use itertools::Itertools;
 use num_traits::Euclid;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -47,6 +48,22 @@ impl<T> Grid<T> {
       rows,
       cols,
     })
+  }
+
+  /// Constructs a grid from a Vec of rows, each of which is a Vec of data.
+  /// Will give `err` if the outer `Vec` is empty, or if the inner `Vec`s do not have the same non-0 length.
+  /// This is not the most hyperefficient way to parse this (`from_data` avoids additional allocations), but often maps nicer onto input data.
+  pub fn from_rows(data: Vec<Vec<T>>) -> anyhow::Result<Self> {
+    anyhow::ensure!(!data.is_empty(), "outer vec empty");
+    let cols = data.first().unwrap().len();
+    anyhow::ensure!(cols > 0, "inner vec empty");
+    anyhow::ensure!(
+      data.iter().map(Vec::len).all_equal(),
+      "rows of unequal length"
+    );
+
+    Self::from_data(data.into_iter().flatten().collect(), cols)
+      .ok_or(anyhow::anyhow!("grid creation failed"))
   }
 
   pub fn rows(&self) -> usize {

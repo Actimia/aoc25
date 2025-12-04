@@ -48,10 +48,12 @@ impl Seq {
     }])
   }
 
+  #[allow(clippy::should_implement_trait)]
   pub fn add(self, rhs: impl Into<Seq>) -> impl Sequence {
     self.zip(rhs.into()).map(|(l, r)| l.wrapping_add(r))
   }
 
+  #[allow(clippy::should_implement_trait)]
   pub fn sub(self, rhs: impl Into<Seq>) -> impl Sequence {
     self.zip(rhs.into()).map(|(l, r)| l.wrapping_sub(r))
   }

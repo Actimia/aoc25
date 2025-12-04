@@ -4,66 +4,61 @@ use aoc25::grid::Grid;
 const INPUT: &str = include_str!("data/04.txt");
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-enum Map {
+enum MapCell {
   None,
   Roll,
 }
 
-impl Map {
+impl MapCell {
   fn is_roll(&self) -> bool {
-    matches!(self, Map::Roll)
+    matches!(self, MapCell::Roll)
   }
 }
 
-impl TryFrom<char> for Map {
+impl TryFrom<char> for MapCell {
   type Error = anyhow::Error;
 
   fn try_from(value: char) -> Result<Self, Self::Error> {
     Ok(match value {
-      '@' => Map::Roll,
-      '.' => Map::None,
+      '@' => MapCell::Roll,
+      '.' => MapCell::None,
       _ => bail!("Unknown char"),
     })
   }
 }
 
-fn parse_grid(input: &str) -> Grid<Map> {
-  let lines: Vec<&str> = input.lines().collect();
-  let rows = lines.len();
-  let data: Vec<Map> = lines
-    .iter()
-    .map(|l| l.chars().flat_map(Map::try_from))
-    .flatten()
+fn parse_grid(input: &str) -> anyhow::Result<Grid<MapCell>> {
+  let data: Vec<Vec<_>> = input
+    .lines()
+    .map(|l| l.chars().flat_map(MapCell::try_from).collect())
     .collect();
 
-  let cols = data.len() / rows;
-  eprintln!("{rows}x{cols}");
-  Grid::from_data(data, cols).unwrap()
+  Grid::from_rows(data)
 }
 
-fn find_accessible(grid: &Grid<Map>) -> impl Iterator<Item = (usize, usize, &Map)> {
-  const MAX_NEIGHBORS: usize = 4;
+fn find_accessible(grid: &Grid<MapCell>) -> impl Iterator<Item = (usize, usize, &MapCell)> {
+  const MAX_NEIGHBORS: usize = 3;
 
   grid
     .cells()
     .filter(|(_, _, c)| c.is_roll())
-    .filter(|(row, col, _)| grid.count_neighbors(*row, *col, Map::is_roll) < MAX_NEIGHBORS)
+    .filter(|(row, col, _)| grid.count_neighbors(*row, *col, MapCell::is_roll) <= MAX_NEIGHBORS)
 }
 
 #[allow(unused)]
-fn part_one(grid: Grid<Map>) -> usize {
+fn part_one(grid: Grid<MapCell>) -> usize {
   // 1376
   find_accessible(&grid).count()
 }
 
 #[allow(unused)]
-fn part_two(grid: Grid<Map>) -> usize {
+fn part_two(grid: Grid<MapCell>) -> usize {
   // 8587
-  fn remove_accessible(grid: &Grid<Map>) -> (Grid<Map>, usize) {
+  fn remove_accessible(grid: &Grid<MapCell>) -> (Grid<MapCell>, usize) {
     let mut next = grid.clone();
     let mut removed = 0;
-    for (row, col, _) in find_accessible(&grid) {
-      next[(row, col)] = Map::None;
+    for (row, col, _) in find_accessible(grid) {
+      next[(row, col)] = MapCell::None;
       removed += 1
     }
     (next, removed)
@@ -83,12 +78,12 @@ fn part_two(grid: Grid<Map>) -> usize {
 }
 
 fn main() -> anyhow::Result<()> {
-  let grid = parse_grid(INPUT);
+  let grid = parse_grid(INPUT)?;
   let part_one = part_one(grid.clone());
-  println!("Part I: {part_one}");
+  println!("Part 1: {part_one}");
 
   let part_two = part_two(grid);
-  println!("Part II: {part_two}");
+  println!("Part 2: {part_two}");
   Ok(())
 }
 
@@ -96,18 +91,18 @@ fn main() -> anyhow::Result<()> {
 mod tests {
   use super::*;
 
+  const SAMPLE_INPUT: &str = "..@@.@@@@.\n@@@.@.@.@@\n@@@@@.@.@@\n@.@@@@..@.\n@@.@@@@.@@\n.@@@@@@@.@\n.@.@.@.@@@\n@.@@@.@@@@\n.@@@@@@@@.\n@.@.@@@.@.";
+
   #[test]
-  fn test_one() {
-    let input = "..@@.@@@@.\n@@@.@.@.@@\n@@@@@.@.@@\n@.@@@@..@.\n@@.@@@@.@@\n.@@@@@@@.@\n.@.@.@.@@@\n@.@@@.@@@@\n.@@@@@@@@.\n@.@.@@@.@.";
-    let grid = parse_grid(input);
+  fn test_part_one() {
+    let grid = parse_grid(SAMPLE_INPUT).unwrap();
     let accessible = part_one(grid);
     assert_eq!(accessible, 13);
   }
 
   #[test]
-  fn test_two() {
-    let input = "..@@.@@@@.\n@@@.@.@.@@\n@@@@@.@.@@\n@.@@@@..@.\n@@.@@@@.@@\n.@@@@@@@.@\n.@.@.@.@@@\n@.@@@.@@@@\n.@@@@@@@@.\n@.@.@@@.@.";
-    let grid = parse_grid(input);
+  fn test_part_two() {
+    let grid = parse_grid(SAMPLE_INPUT).unwrap();
     let accessible = part_two(grid);
     assert_eq!(accessible, 43);
   }
