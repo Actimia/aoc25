@@ -51,9 +51,9 @@ impl Bank {
 
     // finds the largest digit and its offset in the haystack
     fn find_next(haystack: &[u32]) -> Option<(u32, usize)> {
-      let value = haystack.iter().max()?;
-      let index = haystack.iter().position(|x| x == value)?;
-      Some((*value, index))
+      let value = *haystack.iter().max()?;
+      let index = haystack.iter().position(|x| *x == value)?;
+      Some((value, index))
     }
 
     let mut joltage: u64 = 0;
@@ -69,17 +69,8 @@ impl Bank {
 }
 
 fn main() -> anyhow::Result<()> {
-  let banks = INPUT.split('\n').flat_map(Bank::try_from);
-
-  let mut total = 0u64;
-
-  for bank in banks {
-    match bank.part_two() {
-      Some(max) => total += max as u64,
-      None => eprintln!("failure!"),
-    }
-  }
-
+  let banks = INPUT.lines().flat_map(Bank::try_from);
+  let total: u64 = banks.flat_map(|b| b.part_two()).sum();
   println!("{total}");
   Ok(())
 }

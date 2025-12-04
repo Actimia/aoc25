@@ -131,12 +131,12 @@ impl<T> Grid<T> {
 
   pub fn neighbors(&self, row: usize, col: usize) -> impl Iterator<Item = &T> {
     let neighbors = [
-      self.get(row - 1, col - 1),
-      self.get(row - 1, col),
-      self.get(row - 1, col + 1),
-      self.get(row, col - 1),
+      self.get(row.wrapping_sub(1), col.wrapping_sub(1)),
+      self.get(row.wrapping_sub(1), col),
+      self.get(row.wrapping_sub(1), col + 1),
+      self.get(row, col.wrapping_sub(1)),
       self.get(row, col + 1),
-      self.get(row + 1, col - 1),
+      self.get(row + 1, col.wrapping_sub(1)),
       self.get(row + 1, col),
       self.get(row + 1, col + 1),
     ];
@@ -161,6 +161,13 @@ impl<T> Grid<T> {
 
   pub fn iter(&self) -> impl Iterator<Item = &T> {
     self.data.iter()
+  }
+
+  pub fn cells(&self) -> impl Iterator<Item = (usize, usize, &T)> {
+    self.data.iter().enumerate().map(|(i, data)| {
+      let (row, col) = i.div_rem_euclid(&self.rows());
+      (row, col, data)
+    })
   }
 }
 
