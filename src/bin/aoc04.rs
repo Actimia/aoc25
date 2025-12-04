@@ -9,6 +9,12 @@ enum Map {
   Roll,
 }
 
+impl Map {
+  fn is_roll(&self) -> bool {
+    matches!(self, Map::Roll)
+  }
+}
+
 impl TryFrom<char> for Map {
   type Error = anyhow::Error;
 
@@ -40,10 +46,8 @@ fn find_accessible(grid: &Grid<Map>) -> impl Iterator<Item = (usize, usize, &Map
 
   grid
     .cells()
-    .filter(|(_, _, c)| matches!(c, Map::Roll))
-    .filter(|(row, col, _)| {
-      grid.count_neighbors(*row, *col, |c| matches!(c, Map::Roll)) < MAX_NEIGHBORS
-    })
+    .filter(|(_, _, c)| c.is_roll())
+    .filter(|(row, col, _)| grid.count_neighbors(*row, *col, Map::is_roll) < MAX_NEIGHBORS)
 }
 
 #[allow(unused)]
