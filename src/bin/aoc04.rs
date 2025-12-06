@@ -27,15 +27,6 @@ impl TryFrom<char> for MapCell {
   }
 }
 
-fn parse_grid(input: &str) -> anyhow::Result<Grid<MapCell>> {
-  let data: Vec<Vec<_>> = input
-    .lines()
-    .map(|l| l.chars().flat_map(MapCell::try_from).collect())
-    .collect();
-
-  Grid::from_rows(data)
-}
-
 fn find_accessible(grid: &Grid<MapCell>) -> impl Iterator<Item = (usize, usize, &MapCell)> {
   const MAX_NEIGHBORS: usize = 3;
 
@@ -78,7 +69,7 @@ fn part_two(grid: Grid<MapCell>) -> usize {
 }
 
 fn main() -> anyhow::Result<()> {
-  let grid = parse_grid(INPUT)?;
+  let grid = Grid::from_str(INPUT)?;
   let part_one = part_one(grid.clone());
   println!("Part 1: {part_one}");
 
@@ -95,14 +86,14 @@ mod tests {
 
   #[test]
   fn test_part_one() {
-    let grid = parse_grid(SAMPLE_INPUT).unwrap();
+    let grid = Grid::from_str(SAMPLE_INPUT).unwrap();
     let accessible = part_one(grid);
     assert_eq!(accessible, 13);
   }
 
   #[test]
   fn test_part_two() {
-    let grid = parse_grid(SAMPLE_INPUT).unwrap();
+    let grid = Grid::from_str(SAMPLE_INPUT).unwrap();
     let accessible = part_two(grid);
     assert_eq!(accessible, 43);
   }

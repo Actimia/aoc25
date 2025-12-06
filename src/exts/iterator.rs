@@ -27,6 +27,15 @@ pub trait IteratorExt: Iterator + Sized {
       cur: 0,
     }
   }
+
+  /*
+  fn transpose<I, T>(self) -> impl Iterator<Item = I>
+  where
+    Self: Iterator<Item = I>,
+    I: Iterator<Item = T>,
+  {
+    vec![].into_iter()
+  } */
 }
 
 impl<T: Iterator> IteratorExt for T {}

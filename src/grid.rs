@@ -3,6 +3,7 @@ use std::{
   ops::{Index, IndexMut},
 };
 
+use anyhow::ensure;
 use itertools::Itertools;
 use num_traits::Euclid;
 
@@ -37,13 +38,12 @@ impl<T: Sized + Copy> Grid<T> {
 
 impl<T> Grid<T> {
   /// Takes data stored in row-wise format and creates a Grid over it.
-  /// Returns `None` if  `data.len()` is not a multiple of `cols`.
-  pub fn from_data(data: Vec<T>, cols: usize) -> Option<Self> {
+  /// Returns `Err` if  `data.len()` is not a multiple of `cols`.
+  pub fn from_data(data: impl IntoIterator<Item = T>, cols: usize) -> anyhow::Result<Self> {
+    let data: Vec<T> = data.into_iter().collect();
     let (rows, rem) = data.len().div_rem_euclid(&cols);
-    if rem != 0 {
-      return None;
-    }
-    Some(Self {
+    ensure!(rem == 0, "bad data size ({})", data.len());
+    Ok(Self {
       data: data.into_boxed_slice(),
       rows,
       cols,
@@ -62,8 +62,21 @@ impl<T> Grid<T> {
       "rows of unequal length"
     );
 
-    Self::from_data(data.into_iter().flatten().collect(), cols)
-      .ok_or(anyhow::anyhow!("grid creation failed"))
+    Self::from_data(data.into_iter().flatten(), cols)
+  }
+
+  /// Constructs a grid from text, where each row of the text becomes a row of the grid,
+  /// and each character is mapped to `T`.
+  pub fn from_str(text: impl AsRef<str>) -> anyhow::Result<Self>
+  where
+    T: TryFrom<char>,
+  {
+    let data = text
+      .as_ref()
+      .lines()
+      .map(|l| l.chars().flat_map(|c| c.try_into()).collect())
+      .collect();
+    Self::from_rows(data)
   }
 
   pub fn rows(&self) -> usize {
@@ -190,6 +203,18 @@ impl<T> Grid<T> {
       (row, col, data)
     })
   }
+
+  pub fn transpose(&self) -> Self
+  where
+    T: Clone,
+  {
+    let data: Vec<T> = (0..self.cols())
+      .map(|c| self.iter_col(c).cloned())
+      .flatten()
+      .collect();
+
+    Grid::from_data(data, self.rows()).unwrap()
+  }
 }
 
 impl<T> IntoIterator for Grid<T> {
@@ -212,10 +237,13 @@ impl<'a, T> Iterator for StepIterator<'a, T> {
   type Item = (&'a T, (usize, usize));
 
   fn next(&mut self) -> Option<Self::Item> {
-    let row = self.cursor.0.checked_add_signed(self.step.0)?;
-    let col = self.cursor.1.checked_add_signed(self.step.1)?;
-    self.cursor = (row, col);
-    self.grid.get(row, col).map(|value| (value, self.cursor))
+    let res = self
+      .grid
+      .get(self.cursor.0, self.cursor.1)
+      .map(|value| (value, self.cursor));
+    self.cursor.0 = self.cursor.0.checked_add_signed(self.step.0)?;
+    self.cursor.1 = self.cursor.1.checked_add_signed(self.step.1)?;
+    res
   }
 }
 
@@ -287,6 +315,17 @@ mod tests {
   }
 
   #[test]
+  fn test_transpose() {
+    let a: Grid<char> = Grid::from_str("abc\ndef").unwrap();
+    let b = a.transpose();
+    let transposed: Grid<char> = Grid::from_str("ad\nbe\ncf").unwrap();
+
+    assert_eq!(a.cols(), b.rows());
+    assert_eq!(a.rows(), b.cols());
+    assert_eq!(b, transposed);
+  }
+
+  #[test]
   fn test_steps() {
     let size = 5;
     let grid = {
@@ -299,15 +338,14 @@ mod tests {
       g
     };
 
-    eprintln!("{}", grid);
     let steps: Vec<usize> = grid.step((0, 0), (0, 1)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![1, 2, 3, 4]);
+    assert_eq!(steps, vec![0, 1, 2, 3, 4]);
 
     let steps: Vec<usize> = grid.step((0, 0), (1, 0)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![5, 10, 15, 20]);
+    assert_eq!(steps, vec![0, 5, 10, 15, 20]);
 
     let steps: Vec<usize> = grid.step((0, 0), (1, 1)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![6, 12, 18, 24]);
+    assert_eq!(steps, vec![0, 6, 12, 18, 24]);
   }
 
   #[test]
