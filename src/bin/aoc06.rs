@@ -8,15 +8,6 @@ enum Operator {
   Times,
 }
 
-impl Operator {
-  fn compute(&self, nums: &Vec<u64>) -> u64 {
-    match self {
-      Operator::Plus => nums.iter().sum(),
-      Operator::Times => nums.iter().product(),
-    }
-  }
-}
-
 impl TryFrom<&str> for Operator {
   type Error = anyhow::Error;
 
@@ -30,10 +21,22 @@ impl TryFrom<&str> for Operator {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-struct ProblemsOne {
-  numbers: Vec<Vec<u64>>,
-  operators: Vec<Operator>,
+struct Problem {
+  numbers: Vec<u64>,
+  operator: Operator,
 }
+
+impl Problem {
+  fn compute(&self) -> u64 {
+    match self.operator {
+      Operator::Plus => self.numbers.iter().sum(),
+      Operator::Times => self.numbers.iter().product(),
+    }
+  }
+}
+
+#[derive(Clone, Eq, PartialEq)]
+struct ProblemsOne(Vec<Problem>);
 
 impl TryFrom<&str> for ProblemsOne {
   type Error = anyhow::Error;
@@ -42,7 +45,7 @@ impl TryFrom<&str> for ProblemsOne {
     let mut lines: Vec<_> = value.lines().collect();
     ensure!(lines.len() >= 3, "too few lines ({})", lines.len());
     let mut numbers: Vec<Vec<u64>> = {
-      let first = lines.first().ok_or(anyhow!("no lines found"))?;
+      let first = lines.first().unwrap();
       let split: Vec<_> = first.split_whitespace().collect();
       let numbers = vec![vec![]; split.len()];
       numbers
@@ -72,32 +75,24 @@ impl TryFrom<&str> for ProblemsOne {
         .for_each(|(x, list)| list.push(x));
     }
 
-    Ok(Self { numbers, operators })
+    let problems = operators
+      .into_iter()
+      .zip(numbers.into_iter())
+      .map(|(operator, numbers)| Problem { numbers, operator })
+      .collect();
+
+    Ok(Self(problems))
   }
 }
 
 #[allow(unused)]
 fn part_one(problems: ProblemsOne) -> Vec<u64> {
   // 6605396225322
-  let ProblemsOne { numbers, operators } = problems;
-
-  numbers
-    .iter()
-    .zip(operators.iter())
-    .map(|(nums, op)| op.compute(nums))
-    .collect()
+  problems.0.iter().map(Problem::compute).collect()
 }
 
 #[derive(Clone, Eq, PartialEq)]
-struct ProblemsTwo {
-  problems: Vec<Problem>,
-}
-
-#[derive(Clone, Eq, PartialEq)]
-struct Problem {
-  numbers: Vec<u64>,
-  operator: Operator,
-}
+struct ProblemsTwo(Vec<Problem>);
 
 impl TryFrom<&str> for ProblemsTwo {
   type Error = anyhow::Error;
@@ -145,18 +140,14 @@ impl TryFrom<&str> for ProblemsTwo {
       problems.push(Problem { numbers, operator })
     }
 
-    Ok(Self { problems })
+    Ok(Self(problems))
   }
 }
 
 #[allow(unused)]
 fn part_two(problems: ProblemsTwo) -> Vec<u64> {
   // 11052310600986
-  problems
-    .problems
-    .into_iter()
-    .map(|p| p.operator.compute(&p.numbers))
-    .collect()
+  problems.0.iter().map(Problem::compute).collect()
 }
 
 fn main() -> anyhow::Result<()> {
