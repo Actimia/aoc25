@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::{ops::RangeInclusive, time::Instant};
 
 const INPUT: &str = include_str!("data/05.txt");
 
@@ -43,27 +43,18 @@ fn part_one(inventory: Inventory) -> usize {
     .count()
 }
 
-fn overlaps(a: &RangeInclusive<u64>, b: &RangeInclusive<u64>) -> bool {
-  b.contains(a.start()) || b.contains(a.end()) || a.contains(b.start()) && a.contains(b.end())
-}
-
 fn merge_ranges(ranges: Vec<RangeInclusive<u64>>) -> (Vec<RangeInclusive<u64>>, usize) {
+  #[inline]
+  fn overlaps(a: &RangeInclusive<u64>, b: &RangeInclusive<u64>) -> bool {
+    a.start() <= b.end() && b.start() <= a.end()
+  }
+
   let mut new = vec![];
   let mut count = 0;
   for range in ranges.into_iter() {
-    if let Some(r) = new.iter_mut().find(|r| overlaps(r, &range)) {
-      let merged = (*r.start().min(range.start()))..=(*r.end().max(range.end()));
-      eprintln!(
-        "merging {}-{} and {}-{} to {}-{}",
-        range.start(),
-        range.end(),
-        r.start(),
-        r.end(),
-        merged.start(),
-        merged.end(),
-      );
+    if let Some(overlap) = new.iter_mut().find(|r| overlaps(r, &range)) {
+      *overlap = (*overlap.start().min(range.start()))..=(*overlap.end().max(range.end()));
       count += 1;
-      *r = merged;
     } else {
       new.push(range);
     }
@@ -89,12 +80,13 @@ fn part_two(inventory: Inventory) -> usize {
 }
 
 fn main() -> anyhow::Result<()> {
-  let inventory: Inventory = INPUT.try_into()?;
-  let part_one = part_one(inventory.clone());
-  println!("Part I: {part_one}");
+  let start = Instant::now();
+  let part_one = part_one(INPUT.try_into()?);
+  println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
 
-  let part_two = part_two(inventory);
-  println!("Part II: {part_two}");
+  let start = Instant::now();
+  let part_two = part_two(INPUT.try_into()?);
+  println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
   Ok(())
 }
 

@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use anyhow::{anyhow, bail, ensure};
 
 const INPUT: &str = include_str!("data/06.txt");
@@ -151,15 +153,17 @@ fn part_two(problems: ProblemsTwo) -> Vec<u64> {
 }
 
 fn main() -> anyhow::Result<()> {
+  let start = Instant::now();
   let problem = INPUT.try_into()?;
   let totals_one = part_one(problem);
   let part_one: u64 = totals_one.iter().sum();
-  println!("Part I: {part_one}");
+  println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
 
+  let start = Instant::now();
   let problem_two: ProblemsTwo = INPUT.try_into()?;
   let totals_two = part_two(problem_two);
   let part_two: u64 = totals_two.iter().sum();
-  println!("Part II: {part_two}");
+  println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
   Ok(())
 }
 

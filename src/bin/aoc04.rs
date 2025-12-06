@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use anyhow::bail;
 use aoc25::grid::Grid;
 
@@ -37,18 +39,18 @@ fn find_accessible(grid: &Grid<MapCell>) -> impl Iterator<Item = (usize, usize, 
 }
 
 #[allow(unused)]
-fn part_one(grid: Grid<MapCell>) -> usize {
+fn part_one(grid: &Grid<MapCell>) -> usize {
   // 1376
-  find_accessible(&grid).count()
+  find_accessible(grid).count()
 }
 
 #[allow(unused)]
 fn part_two(grid: Grid<MapCell>) -> usize {
   // 8587
-  fn remove_accessible(grid: &Grid<MapCell>) -> (Grid<MapCell>, usize) {
+  fn remove_accessible(grid: Grid<MapCell>) -> (Grid<MapCell>, usize) {
     let mut next = grid.clone();
     let mut removed = 0;
-    for (row, col, _) in find_accessible(grid) {
+    for (row, col, _) in find_accessible(&grid) {
       next[(row, col)] = MapCell::None;
       removed += 1
     }
@@ -58,8 +60,9 @@ fn part_two(grid: Grid<MapCell>) -> usize {
   let mut total_removed = 0;
   let mut grid = grid;
   loop {
-    let (next, removed) = remove_accessible(&grid);
+    let (next, removed) = remove_accessible(grid);
     total_removed += removed;
+    eprintln!("removed {removed} rolls");
     grid = next;
     if removed == 0 {
       break;
@@ -70,11 +73,13 @@ fn part_two(grid: Grid<MapCell>) -> usize {
 
 fn main() -> anyhow::Result<()> {
   let grid = Grid::from_str(INPUT)?;
-  let part_one = part_one(grid.clone());
-  println!("Part 1: {part_one}");
+  let start = Instant::now();
+  let part_one = part_one(&grid);
+  println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
 
+  let start = Instant::now();
   let part_two = part_two(grid);
-  println!("Part 2: {part_two}");
+  println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
   Ok(())
 }
 
@@ -87,7 +92,7 @@ mod tests {
   #[test]
   fn test_part_one() {
     let grid = Grid::from_str(SAMPLE_INPUT).unwrap();
-    let accessible = part_one(grid);
+    let accessible = part_one(&grid);
     assert_eq!(accessible, 13);
   }
 

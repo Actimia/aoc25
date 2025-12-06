@@ -204,6 +204,14 @@ impl<T> Grid<T> {
     })
   }
 
+  pub fn cells_mut(&mut self) -> impl Iterator<Item = (usize, usize, &mut T)> {
+    let rows = self.rows();
+    self.data.iter_mut().enumerate().map(move |(i, data)| {
+      let (row, col) = i.div_rem_euclid(&rows);
+      (row, col, data)
+    })
+  }
+
   pub fn transpose(&self) -> Self
   where
     T: Clone,
