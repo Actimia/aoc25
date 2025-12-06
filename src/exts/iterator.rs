@@ -19,9 +19,7 @@ pub trait IteratorExt: Iterator + Sized {
   where
     Self::Item: Copy,
   {
-    if count == 0 {
-      panic!("count cannot be 0")
-    }
+    assert!(count != 0, "count cannot be 0");
     RepeatEachIterator {
       inner: self,
       count,
