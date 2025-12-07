@@ -79,15 +79,18 @@ impl<T> Grid<T> {
     Self::from_rows(data)
   }
 
+  #[inline]
   pub fn rows(&self) -> usize {
     self.rows
   }
 
+  #[inline]
   pub fn cols(&self) -> usize {
     self.cols
   }
 
-  /// Computes the actual data index of a coordinate pair. Returns None if the coordinates were invalid.
+  /// Computes the actual data index of a coordinate pair. Returns None if the coordinates are out of bounds.
+  #[inline]
   fn get_index(&self, row: usize, col: usize) -> Option<usize> {
     if self.rows <= row || self.cols <= col {
       None
@@ -96,8 +99,10 @@ impl<T> Grid<T> {
     }
   }
 
+  /// Row-wise rotation of the grid.
+  /// Pushes each row down by `n` (or up for negative `n`),
+  /// filling with rows from the bottom (or top for negative `n`).
   pub fn rotate_rows(&mut self, n: isize) {
-    // push each row down n, filling with rows from the bottom
     let offset = n * self.cols as isize;
 
     if offset.is_positive() {
@@ -107,9 +112,10 @@ impl<T> Grid<T> {
     }
   }
 
+  /// Column-wise rotation of the grid.
+  /// Pushes each column right by `n` (or left for negative `n`),
+  /// filling with columns from the left (or right for negative `n`).
   pub fn rotate_cols(&mut self, offset: isize) {
-    // push each col right by n, filling with cols from the left
-
     for col in self.data.chunks_exact_mut(self.cols) {
       if offset.is_positive() {
         col.rotate_right(offset as usize);
@@ -132,13 +138,14 @@ impl<T> Grid<T> {
   }
 
   pub fn iter_row(&self, row: usize) -> impl Iterator<Item = &T> {
-    // let offset = self.get_index(row, 0)?.checked_sub(1).unwrap_or(0);
-    // Some(self.data.iter().skip(offset).step_by(self.cols))
-    self.step((row, 0), (0, 1)).map(|(x, _)| x)
+    let start = row * self.cols();
+    let end = start + self.cols();
+    self.data[start..end].iter()
   }
 
   pub fn iter_col(&self, col: usize) -> impl Iterator<Item = &T> {
-    self.step((0, col), (1, 0)).map(|(x, _)| x)
+    let start = self.get_index(0, col).unwrap();
+    self.data[start..].iter().step_by(self.cols())
   }
 
   /// Gets a reference to a cell in the grid. Returns None if the coordinates were invalid.
@@ -331,6 +338,44 @@ mod tests {
     assert_eq!(a.cols(), b.rows());
     assert_eq!(a.rows(), b.cols());
     assert_eq!(b, transposed);
+  }
+
+  #[test]
+  fn test_iter_row() {
+    let grid: Grid<char> = Grid::from_str("1234\n4567\n7890").unwrap();
+    assert_eq!(
+      grid.iter_row(0).copied().collect::<Vec<_>>(),
+      vec!['1', '2', '3', '4']
+    );
+    assert_eq!(
+      grid.iter_row(1).copied().collect::<Vec<_>>(),
+      vec!['4', '5', '6', '7']
+    );
+    assert_eq!(
+      grid.iter_row(2).copied().collect::<Vec<_>>(),
+      vec!['7', '8', '9', '0']
+    );
+  }
+
+  #[test]
+  fn test_iter_col() {
+    let grid: Grid<char> = Grid::from_str("1234\n4567\n7890").unwrap();
+    assert_eq!(
+      grid.iter_col(0).copied().collect::<Vec<_>>(),
+      vec!['1', '4', '7']
+    );
+    assert_eq!(
+      grid.iter_col(1).copied().collect::<Vec<_>>(),
+      vec!['2', '5', '8']
+    );
+    assert_eq!(
+      grid.iter_col(2).copied().collect::<Vec<_>>(),
+      vec!['3', '6', '9']
+    );
+    assert_eq!(
+      grid.iter_col(3).copied().collect::<Vec<_>>(),
+      vec!['4', '7', '0']
+    );
   }
 
   #[test]

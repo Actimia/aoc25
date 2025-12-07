@@ -45,6 +45,7 @@ fn part_one(manifold: &Grid<TachyonManifold>) -> u64 {
       if beams[splitter] {
         splits += 1;
         beams[splitter] = false;
+        // input is guaranteed to not have splitters by the edge of the grid
         beams[splitter - 1] = true;
         beams[splitter + 1] = true;
       }
@@ -72,10 +73,10 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
       .positions(|c| matches!(c, TachyonManifold::Splitter))
     {
       if timelines[splitter] > 0 {
-        let here = mem::replace(&mut timelines[splitter], 0);
+        let ways_here = mem::replace(&mut timelines[splitter], 0);
         // input is guaranteed to not have splitters by the edge of the grid
-        timelines[splitter - 1] += here;
-        timelines[splitter + 1] += here;
+        timelines[splitter - 1] += ways_here;
+        timelines[splitter + 1] += ways_here;
       }
     }
   }
