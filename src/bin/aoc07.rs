@@ -31,7 +31,7 @@ impl TryFrom<char> for TachyonManifold {
 fn part_one(manifold: &Grid<TachyonManifold>) -> u64 {
   // 1585
   let mut beams: Vec<bool> = manifold
-    .iter_row(0)
+    .row(0)
     .map(|c| matches!(c, TachyonManifold::Start))
     .collect();
 
@@ -39,7 +39,7 @@ fn part_one(manifold: &Grid<TachyonManifold>) -> u64 {
 
   for row in 1..manifold.rows() {
     for splitter in manifold
-      .iter_row(row)
+      .row(row)
       .positions(|c| matches!(c, TachyonManifold::Splitter))
     {
       if beams[splitter] {
@@ -60,7 +60,7 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
   // 431691375: too low
   // 16716444407407
   let mut timelines: Vec<u64> = manifold
-    .iter_row(0)
+    .row(0)
     .map(|c| match c {
       TachyonManifold::Start => 1,
       _ => 0,
@@ -69,7 +69,7 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
 
   for row in 1..manifold.rows() {
     for splitter in manifold
-      .iter_row(row)
+      .row(row)
       .positions(|c| matches!(c, TachyonManifold::Splitter))
     {
       if timelines[splitter] > 0 {

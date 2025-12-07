@@ -137,15 +137,28 @@ impl<T> Grid<T> {
     }
   }
 
-  pub fn iter_row(&self, row: usize) -> impl Iterator<Item = &T> {
+  pub fn row(&self, row: usize) -> impl Iterator<Item = &T> {
     let start = row * self.cols();
     let end = start + self.cols();
     self.data[start..end].iter()
   }
 
-  pub fn iter_col(&self, col: usize) -> impl Iterator<Item = &T> {
+  pub fn row_mut(&mut self, row: usize) -> impl Iterator<Item = &mut T> {
+    let start = row * self.cols();
+    let end = start + self.cols();
+    self.data[start..end].iter_mut()
+  }
+
+  pub fn col(&self, col: usize) -> impl Iterator<Item = &T> {
     let start = self.get_index(0, col).unwrap();
-    self.data[start..].iter().step_by(self.cols())
+    let step = self.cols();
+    self.data[start..].iter().step_by(step)
+  }
+
+  pub fn col_mut(&mut self, col: usize) -> impl Iterator<Item = &mut T> {
+    let start = self.get_index(0, col).unwrap();
+    let step = self.cols();
+    self.data[start..].iter_mut().step_by(step)
   }
 
   /// Gets a reference to a cell in the grid. Returns None if the coordinates were invalid.
@@ -224,7 +237,7 @@ impl<T> Grid<T> {
     T: Clone,
   {
     let data: Vec<T> = (0..self.cols())
-      .map(|c| self.iter_col(c).cloned())
+      .map(|c| self.col(c).cloned())
       .flatten()
       .collect();
 
@@ -344,15 +357,15 @@ mod tests {
   fn test_iter_row() {
     let grid: Grid<char> = Grid::from_str("1234\n4567\n7890").unwrap();
     assert_eq!(
-      grid.iter_row(0).copied().collect::<Vec<_>>(),
+      grid.row(0).copied().collect::<Vec<_>>(),
       vec!['1', '2', '3', '4']
     );
     assert_eq!(
-      grid.iter_row(1).copied().collect::<Vec<_>>(),
+      grid.row(1).copied().collect::<Vec<_>>(),
       vec!['4', '5', '6', '7']
     );
     assert_eq!(
-      grid.iter_row(2).copied().collect::<Vec<_>>(),
+      grid.row(2).copied().collect::<Vec<_>>(),
       vec!['7', '8', '9', '0']
     );
   }
@@ -361,19 +374,19 @@ mod tests {
   fn test_iter_col() {
     let grid: Grid<char> = Grid::from_str("1234\n4567\n7890").unwrap();
     assert_eq!(
-      grid.iter_col(0).copied().collect::<Vec<_>>(),
+      grid.col(0).copied().collect::<Vec<_>>(),
       vec!['1', '4', '7']
     );
     assert_eq!(
-      grid.iter_col(1).copied().collect::<Vec<_>>(),
+      grid.col(1).copied().collect::<Vec<_>>(),
       vec!['2', '5', '8']
     );
     assert_eq!(
-      grid.iter_col(2).copied().collect::<Vec<_>>(),
+      grid.col(2).copied().collect::<Vec<_>>(),
       vec!['3', '6', '9']
     );
     assert_eq!(
-      grid.iter_col(3).copied().collect::<Vec<_>>(),
+      grid.col(3).copied().collect::<Vec<_>>(),
       vec!['4', '7', '0']
     );
   }
