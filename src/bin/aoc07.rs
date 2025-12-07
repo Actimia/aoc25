@@ -26,7 +26,7 @@ impl TryFrom<char> for TachyonManifold {
 }
 
 #[allow(unused)]
-fn part_one(manifold: Grid<TachyonManifold>) -> u64 {
+fn part_one(manifold: &Grid<TachyonManifold>) -> u64 {
   // 1585
   let mut beams: Vec<bool> = manifold
     .iter_row(0)
@@ -59,7 +59,7 @@ fn part_one(manifold: Grid<TachyonManifold>) -> u64 {
 }
 
 #[allow(unused)]
-fn part_two(manifold: Grid<TachyonManifold>) -> u64 {
+fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
   // 431691375: too low
   // 16716444407407
   let mut beams: Vec<u64> = manifold
@@ -71,22 +71,20 @@ fn part_two(manifold: Grid<TachyonManifold>) -> u64 {
     .collect();
 
   for row in 1..manifold.rows() {
-    let mut next_beams = beams.clone();
     for splitter in manifold
       .iter_row(row)
       .positions(|c| matches!(c, TachyonManifold::Splitter))
     {
       if beams[splitter] > 0 {
-        let timelines_here = mem::replace(&mut next_beams[splitter], 0);
-        if let Some(left) = next_beams.get_mut(splitter.wrapping_sub(1)) {
+        let timelines_here = mem::replace(&mut beams[splitter], 0);
+        if let Some(left) = beams.get_mut(splitter.wrapping_sub(1)) {
           *left += timelines_here;
         }
-        if let Some(right) = next_beams.get_mut(splitter + 1) {
+        if let Some(right) = beams.get_mut(splitter + 1) {
           *right += timelines_here;
         }
       }
     }
-    beams = next_beams;
   }
 
   beams.iter().sum()
@@ -94,13 +92,15 @@ fn part_two(manifold: Grid<TachyonManifold>) -> u64 {
 
 fn main() -> anyhow::Result<()> {
   let start = Instant::now();
-  let problem: Grid<TachyonManifold> = Grid::from_str(INPUT)?;
-  let part_one = part_one(problem);
+  let manifold: Grid<TachyonManifold> = Grid::from_str(INPUT)?;
+  println!("Parsed input in {}μs", start.elapsed().as_micros());
+
+  let start = Instant::now();
+  let part_one = part_one(&manifold);
   println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
 
   let start = Instant::now();
-  let problem_two: Grid<TachyonManifold> = Grid::from_str(INPUT)?;
-  let part_two = part_two(problem_two);
+  let part_two = part_two(&manifold);
   println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
   Ok(())
 }
@@ -114,14 +114,14 @@ mod tests {
   #[test]
   fn test_one() {
     let manifold = Grid::from_str(SAMPLE_INPUT).unwrap();
-    let splits = part_one(manifold);
+    let splits = part_one(&manifold);
     assert_eq!(splits, 21);
   }
 
   #[test]
   fn test_two() {
     let manifold = Grid::from_str(SAMPLE_INPUT).unwrap();
-    let timelines = part_two(manifold);
+    let timelines = part_two(&manifold);
     assert_eq!(timelines, 40);
   }
 }
