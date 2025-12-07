@@ -6,6 +6,8 @@ use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/07.txt");
 
+#[repr(u8)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 enum TachyonManifold {
   Empty,
   Splitter,
@@ -36,23 +38,17 @@ fn part_one(manifold: &Grid<TachyonManifold>) -> u64 {
   let mut splits = 0;
 
   for row in 1..manifold.rows() {
-    let mut next_beams = beams.clone();
     for splitter in manifold
       .iter_row(row)
       .positions(|c| matches!(c, TachyonManifold::Splitter))
     {
       if beams[splitter] {
         splits += 1;
-        next_beams[splitter] = false;
-        if let Some(left) = next_beams.get_mut(splitter.wrapping_sub(1)) {
-          *left = true;
-        }
-        if let Some(right) = next_beams.get_mut(splitter + 1) {
-          *right = true;
-        }
+        beams[splitter] = false;
+        beams[splitter - 1] = true;
+        beams[splitter + 1] = true;
       }
     }
-    beams = next_beams;
   }
 
   splits
@@ -62,7 +58,7 @@ fn part_one(manifold: &Grid<TachyonManifold>) -> u64 {
 fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
   // 431691375: too low
   // 16716444407407
-  let mut beams: Vec<u64> = manifold
+  let mut timelines: Vec<u64> = manifold
     .iter_row(0)
     .map(|c| match c {
       TachyonManifold::Start => 1,
@@ -75,19 +71,16 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
       .iter_row(row)
       .positions(|c| matches!(c, TachyonManifold::Splitter))
     {
-      if beams[splitter] > 0 {
-        let timelines_here = mem::replace(&mut beams[splitter], 0);
-        if let Some(left) = beams.get_mut(splitter.wrapping_sub(1)) {
-          *left += timelines_here;
-        }
-        if let Some(right) = beams.get_mut(splitter + 1) {
-          *right += timelines_here;
-        }
+      if timelines[splitter] > 0 {
+        let here = mem::replace(&mut timelines[splitter], 0);
+        // input is guaranteed to not have splitters by the edge of the grid
+        timelines[splitter - 1] += here;
+        timelines[splitter + 1] += here;
       }
     }
   }
 
-  beams.iter().sum()
+  timelines.iter().sum()
 }
 
 fn main() -> anyhow::Result<()> {
