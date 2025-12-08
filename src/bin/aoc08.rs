@@ -20,13 +20,27 @@ fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<i64, 3>, u64>> {
   }
 
   for (n1, pos1) in nodes.iter().enumerate() {
+    let mut shortest = 10000000000; // big enough for our purposes
     for (n2, pos2) in nodes.iter().enumerate() {
       if n1 == n2 {
         continue;
       }
-      graph.add_edge(n1, n2, (*pos2 - *pos1).length2());
+      let dist = (*pos2 - *pos1).length2();
+
+      if dist >= 7 * shortest {
+        // this cutoff is somewhat arbitrary, but saves a lot of time
+        // part 2 works even with the cutoff = 1
+        // part 1 relies on the globally shortest nodes, not locally shortest
+        // but seems to work with cutoff >= 7, but that is probably a coincidence
+        continue;
+      }
+      shortest = shortest.min(dist);
+
+      graph.add_edge(n1, n2, dist);
     }
   }
+
+  eprintln!("{} nodes, {} edges", graph.num_nodes(), graph.num_edges());
 
   Ok(graph)
 }
@@ -35,13 +49,13 @@ fn count_circuits(graph: &Graph<Vex<i64, 3>, ()>) -> usize {
   let mut circuits: HashMap<usize, usize> = HashMap::default(); // size -> count
   let mut visited = vec![false; graph.num_nodes()];
 
-  for (from, _) in graph.nodes() {
-    if visited[*from] {
+  for (node, _) in graph.nodes() {
+    if visited[*node] {
       continue;
     }
     let mut count = 0;
     graph
-      .visit(*from, SearchMode::BreadthFirst)
+      .visit(*node, SearchMode::BreadthFirst)
       .for_each(|(node, _)| {
         count += 1;
         visited[node] = true;
@@ -108,7 +122,7 @@ fn part_two(graph: &Graph<Vex<i64, 3>, u64>) -> u64 {
 fn main() -> anyhow::Result<()> {
   let start = Instant::now();
   let graph = parse_graph(INPUT)?;
-  println!("Parsed input in {}ms", start.elapsed().as_millis());
+  println!("Parsed input in {}us", start.elapsed().as_micros());
 
   let start = Instant::now();
   let part_one = part_one(&graph, 998);
@@ -116,7 +130,7 @@ fn main() -> anyhow::Result<()> {
 
   let start = Instant::now();
   let part_two = part_two(&graph);
-  println!("Part 2: {part_two} (in {}ms)", start.elapsed().as_millis());
+  println!("Part 2: {part_two} (in {}us)", start.elapsed().as_micros());
   Ok(())
 }
 
