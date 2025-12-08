@@ -89,15 +89,21 @@ impl<const D: usize> Vex<f64, D> {
   }
 }
 
-impl<T> Vex<T, 3> {
-  pub fn x(&self) -> &T {
-    &self.0[0]
+impl<const D: usize> Vex<u64, D> {
+  pub fn length2(&self) -> u64 {
+    self.0.iter().map(|x| x * x).sum::<u64>()
   }
-  pub fn y(&self) -> &T {
-    &self.0[1]
+}
+
+impl<T: Copy> Vex<T, 3> {
+  pub fn x(&self) -> T {
+    self.0[0]
   }
-  pub fn z(&self) -> &T {
-    &self.0[2]
+  pub fn y(&self) -> T {
+    self.0[1]
+  }
+  pub fn z(&self) -> T {
+    self.0[2]
   }
 }
 

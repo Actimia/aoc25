@@ -6,12 +6,12 @@ use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/08.txt");
 
-fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<f64, 3>, f64>> {
-  let mut graph: Graph<Vex<f64, 3>, f64> = Graph::new();
+fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<u64, 3>, u64>> {
+  let mut graph: Graph<Vex<u64, 3>, u64> = Graph::new();
 
   let mut nodes = vec![];
   for line in input.lines() {
-    let nums: Vec<f64> = line.split(',').flat_map(|x| x.parse()).collect();
+    let nums: Vec<u64> = line.split(',').flat_map(|x| x.parse()).collect();
     anyhow::ensure!(nums.len() == 3, "bad line ({line})");
     nodes.push(Vex::new([nums[0], nums[1], nums[2]]));
   }
@@ -25,14 +25,14 @@ fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<f64, 3>, f64>> {
       if n1 == n2 {
         continue;
       }
-      graph.add_edge(n1, n2, (*pos2 - *pos1).length());
+      graph.add_edge(n1, n2, (*pos2 - *pos1).length2());
     }
   }
 
   Ok(graph)
 }
 
-fn count_circuits(graph: &Graph<Vex<f64, 3>, ()>) -> usize {
+fn count_circuits(graph: &Graph<Vex<u64, 3>, ()>) -> usize {
   let mut circuits: HashMap<usize, usize> = HashMap::default(); // size -> count
   let mut visited = vec![false; graph.num_nodes()];
 
@@ -41,37 +41,28 @@ fn count_circuits(graph: &Graph<Vex<f64, 3>, ()>) -> usize {
       continue;
     }
     let mut count = 0;
-    let mut circuit = vec![];
     graph
       .visit(*from, SearchMode::BreadthFirst)
       .for_each(|(node, _)| {
         count += 1;
         visited[node] = true;
-        circuit.push(node)
       });
     *circuits.entry(count).or_default() += 1;
   }
-
-  eprintln!("{circuits:?}");
   circuits.keys().sorted().rev().take(3).product()
 }
 
-fn part_one(graph: Graph<Vex<f64, 3>, f64>, count: usize) -> usize {
+fn part_one(graph: Graph<Vex<u64, 3>, u64>, count: usize) -> usize {
   // 175500
-  let mut connections: Graph<Vex<f64, 3>, ()> = Graph::new();
+  let mut connections: Graph<Vex<u64, 3>, ()> = Graph::new();
   graph.nodes().for_each(|(_, n)| {
     connections.add_node(*n);
   });
 
   let mut edges: Vec<_> = graph.edges().collect();
-  edges.sort_by(|a, b| a.1.total_cmp(b.1));
+  edges.sort_by(|(_, a), (_, b)| a.cmp(b));
 
   for ((from, to), _) in edges {
-    let num_edges = connections.num_edges();
-    if num_edges >= count {
-      break;
-    }
-
     if let Some(_) = connections.get_edge(*from, *to) {
       continue;
     }
@@ -82,30 +73,31 @@ fn part_one(graph: Graph<Vex<f64, 3>, f64>, count: usize) -> usize {
       graph.get_node(*from).unwrap(),
       graph.get_node(*to).unwrap()
     ); */
+    let num_edges = connections.num_edges();
+    if num_edges == count {
+      break;
+    }
   }
 
   count_circuits(&connections)
 }
 
-fn part_two(graph: Graph<Vex<f64, 3>, f64>) -> u64 {
+fn part_two(graph: Graph<Vex<u64, 3>, u64>) -> u64 {
   // 2402892288: too low
   // 6934702555
-  let mut connections: Graph<Vex<f64, 3>, ()> = Graph::new();
+  let mut connections: Graph<Vex<u64, 3>, ()> = Graph::new();
   graph.nodes().for_each(|(_, n)| {
     connections.add_node(*n);
   });
 
   let mut edges: Vec<_> = graph.edges().collect();
-  edges.sort_by(|a, b| a.1.total_cmp(b.1));
+  edges.sort_by(|(_, a), (_, b)| a.cmp(b));
 
   let target_count = graph.num_nodes() - 1; // x nodes can be connected with x-1 edges
 
   for ((from, to), _) in edges {
     let target = graph.get_node(*to).unwrap();
-    if connections
-      .astar(*from, *to, |a, _| (*a - *target).length())
-      .is_some()
-    {
+    if let Some(_) = connections.astar(*from, *to, |a, _| (*a - *target).length2() as f64) {
       continue;
     }
 
@@ -120,7 +112,7 @@ fn part_two(graph: Graph<Vex<f64, 3>, f64>) -> u64 {
       let from = graph.get_node(*from).unwrap();
       let to = graph.get_node(*to).unwrap();
 
-      return (*from.x() as u64) * (*to.x() as u64);
+      return from.x() * to.x();
     }
   }
   0
