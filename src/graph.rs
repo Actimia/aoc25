@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
 /// Undirected graph where nodes are associated with values of N, and edges are associated with values of E.
-#[derive(Default, PartialEq, Eq)]
+#[derive(Default, PartialEq, Eq, Clone)]
 pub struct Graph<V, E> {
   nodes: BTreeMap<usize, V>,
   edges: BTreeMap<Edge, E>,
 }
 
-#[derive(PartialEq, PartialOrd, Ord, Eq)]
+#[derive(PartialEq, PartialOrd, Ord, Eq, Clone)]
 pub struct Edge(usize, usize);
 
 impl Edge {

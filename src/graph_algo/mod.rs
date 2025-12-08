@@ -1,3 +1,3 @@
-mod astar;
-mod dijkstra;
-mod search;
+pub mod astar;
+pub mod dijkstra;
+pub mod search;

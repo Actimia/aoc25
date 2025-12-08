@@ -54,7 +54,7 @@ impl<V, E> Graph<V, E> {
 
   /// Iterates over all nodes connected to `from`, in the order specified in `mode`.
   /// The iteration order of neighbors is not defined.
-  pub fn visit(&self, from: usize, mode: SearchMode) -> impl Iterator<Item = &V> {
+  pub fn visit(&self, from: usize, mode: SearchMode) -> impl Iterator<Item = (usize, &V)> {
     let mut visited = vec![false; self.num_nodes()];
     let mut candidates = VecDeque::new();
     visited[from] = true;
@@ -77,7 +77,7 @@ struct GraphVisitor<'a, N, E> {
 }
 
 impl<'a, N, E> Iterator for GraphVisitor<'a, N, E> {
-  type Item = &'a N;
+  type Item = (usize, &'a N);
 
   fn next(&mut self) -> Option<Self::Item> {
     if self.candidates.is_empty() {
@@ -92,7 +92,7 @@ impl<'a, N, E> Iterator for GraphVisitor<'a, N, E> {
       self.candidates.push_back(node);
       self.visited[node] = true;
     }
-    self.graph.get_node(current)
+    self.graph.get_node(current).map(|node| (current, node))
   }
 }
 
@@ -113,7 +113,11 @@ mod tests {
     g.add_edge(0, 3, ());
     g.add_edge(0, 4, ());
 
-    let nodes: Vec<_> = g.visit(0, SearchMode::BreadthFirst).copied().collect();
+    let nodes: Vec<_> = g
+      .visit(0, SearchMode::BreadthFirst)
+      .map(|(_, node)| node)
+      .copied()
+      .collect();
     assert_eq!(nodes, vec![0, 1, 3, 4, 2])
   }
 
@@ -130,7 +134,11 @@ mod tests {
     g.add_edge(0, 3, ());
     g.add_edge(2, 4, ());
 
-    let nodes: Vec<_> = g.visit(0, SearchMode::DepthFirst).copied().collect();
+    let nodes: Vec<_> = g
+      .visit(0, SearchMode::DepthFirst)
+      .map(|(_, node)| node)
+      .copied()
+      .collect();
     assert_eq!(nodes, vec![0, 3, 1, 2, 4])
   }
 
