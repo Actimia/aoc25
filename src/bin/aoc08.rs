@@ -1,4 +1,3 @@
-use core::f64;
 use std::{collections::HashMap, time::Instant};
 
 use aoc25::{graph::Graph, graph_algo::search::SearchMode, vex::Vex};
@@ -6,12 +5,12 @@ use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/08.txt");
 
-fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<u64, 3>, u64>> {
-  let mut graph: Graph<Vex<u64, 3>, u64> = Graph::new();
+fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<i64, 3>, u64>> {
+  let mut graph: Graph<Vex<i64, 3>, u64> = Graph::new();
 
   let mut nodes = vec![];
   for line in input.lines() {
-    let nums: Vec<u64> = line.split(',').flat_map(|x| x.parse()).collect();
+    let nums: Vec<i64> = line.split(',').flat_map(|x| x.parse()).collect();
     anyhow::ensure!(nums.len() == 3, "bad line ({line})");
     nodes.push(Vex::new([nums[0], nums[1], nums[2]]));
   }
@@ -32,7 +31,7 @@ fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<u64, 3>, u64>> {
   Ok(graph)
 }
 
-fn count_circuits(graph: &Graph<Vex<u64, 3>, ()>) -> usize {
+fn count_circuits(graph: &Graph<Vex<i64, 3>, ()>) -> usize {
   let mut circuits: HashMap<usize, usize> = HashMap::default(); // size -> count
   let mut visited = vec![false; graph.num_nodes()];
 
@@ -52,9 +51,9 @@ fn count_circuits(graph: &Graph<Vex<u64, 3>, ()>) -> usize {
   circuits.keys().sorted().rev().take(3).product()
 }
 
-fn part_one(graph: Graph<Vex<u64, 3>, u64>, count: usize) -> usize {
+fn part_one(graph: &Graph<Vex<i64, 3>, u64>, count: usize) -> usize {
   // 175500
-  let mut connections: Graph<Vex<u64, 3>, ()> = Graph::new();
+  let mut connections: Graph<Vex<i64, 3>, ()> = Graph::new();
   graph.nodes().for_each(|(_, n)| {
     connections.add_node(*n);
   });
@@ -63,16 +62,8 @@ fn part_one(graph: Graph<Vex<u64, 3>, u64>, count: usize) -> usize {
   edges.sort_by(|(_, a), (_, b)| a.cmp(b));
 
   for ((from, to), _) in edges {
-    if let Some(_) = connections.get_edge(*from, *to) {
-      continue;
-    }
-
     connections.add_edge(*from, *to, ());
-    /* eprintln!(
-      "({num_edges}) {:?} -> {:?} = {dist}",
-      graph.get_node(*from).unwrap(),
-      graph.get_node(*to).unwrap()
-    ); */
+
     let num_edges = connections.num_edges();
     if num_edges == count {
       break;
@@ -82,40 +73,36 @@ fn part_one(graph: Graph<Vex<u64, 3>, u64>, count: usize) -> usize {
   count_circuits(&connections)
 }
 
-fn part_two(graph: Graph<Vex<u64, 3>, u64>) -> u64 {
+fn part_two(graph: &Graph<Vex<i64, 3>, u64>) -> u64 {
   // 2402892288: too low
   // 6934702555
-  let mut connections: Graph<Vex<u64, 3>, ()> = Graph::new();
-  graph.nodes().for_each(|(_, n)| {
-    connections.add_node(*n);
-  });
 
   let mut edges: Vec<_> = graph.edges().collect();
   edges.sort_by(|(_, a), (_, b)| a.cmp(b));
 
-  let target_count = graph.num_nodes() - 1; // x nodes can be connected with x-1 edges
+  let target_count = graph.num_nodes(); //- 1; // x nodes can be connected with x-1 edges
 
-  for ((from, to), _) in edges {
-    let target = graph.get_node(*to).unwrap();
-    if let Some(_) = connections.astar(*from, *to, |a, _| (*a - *target).length2() as f64) {
-      continue;
+  let mut visited = vec![false; graph.num_nodes()];
+  let mut connected = 0;
+
+  for ((from, to), _dist) in edges {
+    if !visited[*from] {
+      connected += 1;
+      visited[*from] = true;
+    }
+    if !visited[*to] {
+      connected += 1;
+      visited[*to] = true;
     }
 
-    connections.add_edge(*from, *to, ());
-    let num_edges = connections.num_edges();
-    /* eprintln!(
-      "({num_edges}) {:?} -> {:?} = {dist}",
-      graph.get_node(*from).unwrap(),
-      graph.get_node(*to).unwrap()
-    ); */
-    if num_edges == target_count {
+    if connected >= target_count {
       let from = graph.get_node(*from).unwrap();
       let to = graph.get_node(*to).unwrap();
 
-      return from.x() * to.x();
+      return (from.x() * to.x()) as u64;
     }
   }
-  0
+  unreachable!()
 }
 
 fn main() -> anyhow::Result<()> {
@@ -124,11 +111,11 @@ fn main() -> anyhow::Result<()> {
   println!("Parsed input in {}ms", start.elapsed().as_millis());
 
   let start = Instant::now();
-  let part_one = part_one(graph.clone(), 998);
+  let part_one = part_one(&graph, 998);
   println!("Part 1: {part_one} (in {}ms)", start.elapsed().as_millis());
 
   let start = Instant::now();
-  let part_two = part_two(graph);
+  let part_two = part_two(&graph);
   println!("Part 2: {part_two} (in {}ms)", start.elapsed().as_millis());
   Ok(())
 }
@@ -142,14 +129,14 @@ mod tests {
   #[test]
   fn test_one() {
     let graph = parse_graph(SAMPLE_INPUT).unwrap();
-    let total = part_one(graph, 10);
+    let total = part_one(&graph, 10);
     assert_eq!(total, 40);
   }
 
   #[test]
   fn test_two() {
     let graph = parse_graph(SAMPLE_INPUT).unwrap();
-    let total = part_two(graph);
+    let total = part_two(&graph);
     assert_eq!(total, 25272);
   }
 }

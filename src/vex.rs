@@ -89,9 +89,9 @@ impl<const D: usize> Vex<f64, D> {
   }
 }
 
-impl<const D: usize> Vex<u64, D> {
+impl<const D: usize> Vex<i64, D> {
   pub fn length2(&self) -> u64 {
-    self.0.iter().map(|x| x * x).sum::<u64>()
+    self.0.iter().map(|x| x * x).sum::<i64>() as u64
   }
 }
 
