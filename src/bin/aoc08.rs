@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Instant};
 
-use aoc25::{graph::Graph, graph_algo::search::SearchMode, vex::Vex};
+use aoc25::{exts::duration::DurationExt, graph::Graph, graph_algo::search::SearchMode, vex::Vex};
 use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/08.txt");
@@ -122,15 +122,15 @@ fn part_two(graph: &Graph<Vex<i64, 3>, u64>) -> u64 {
 fn main() -> anyhow::Result<()> {
   let start = Instant::now();
   let graph = parse_graph(INPUT)?;
-  println!("Parsed input in {}us", start.elapsed().as_micros());
+  println!("Parsed input in {}", start.elapsed().display());
 
   let start = Instant::now();
   let part_one = part_one(&graph, 998);
-  println!("Part 1: {part_one} (in {}ms)", start.elapsed().as_millis());
+  println!("Part 1: {part_one} (in {})", start.elapsed().display());
 
   let start = Instant::now();
   let part_two = part_two(&graph);
-  println!("Part 2: {part_two} (in {}us)", start.elapsed().as_micros());
+  println!("Part 2: {part_two} (in {})", start.elapsed().display());
   Ok(())
 }
 

@@ -1,7 +1,7 @@
 use std::{mem, time::Instant};
 
 use anyhow::bail;
-use aoc25::grid::Grid;
+use aoc25::{exts::duration::DurationExt, grid::Grid};
 use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/07.txt");
@@ -87,15 +87,15 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
 fn main() -> anyhow::Result<()> {
   let start = Instant::now();
   let manifold: Grid<TachyonManifold> = Grid::from_str(INPUT)?;
-  println!("Parsed input in {}μs", start.elapsed().as_micros());
+  println!("Parsed input in {}", start.elapsed().display());
 
   let start = Instant::now();
   let part_one = part_one(&manifold);
-  println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
+  println!("Part 1: {part_one} (in {})", start.elapsed().display());
 
   let start = Instant::now();
   let part_two = part_two(&manifold);
-  println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
+  println!("Part 2: {part_two} (in {})", start.elapsed().display());
   Ok(())
 }
 

@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use crate::exts::IteratorExt;
+use crate::exts::iterator::IteratorExt;
 
 // Introduce own trait for infinite sequences?
 // Pros:

@@ -1,6 +1,6 @@
 use std::{fmt::Display, time::Instant};
 
-use aoc25::{grid::Grid, vex::Vex};
+use aoc25::{exts::duration::DurationExt, grid::Grid, vex::Vex};
 
 const INPUT: &str = include_str!("data/09.txt");
 
@@ -206,15 +206,15 @@ fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
 fn main() -> anyhow::Result<()> {
   let start = Instant::now();
   let points = parse(INPUT)?;
-  println!("Parsed input in {}us", start.elapsed().as_micros());
+  println!("Parsed input (in {})", start.elapsed().display());
 
   let start = Instant::now();
   let part_one = part_one(&points);
-  println!("Part 1: {part_one} (in {}us)", start.elapsed().as_micros());
+  println!("Part 1: {part_one} (in {})", start.elapsed().display());
 
   let start = Instant::now();
   let part_two = part_two(&points);
-  println!("Part 2: {part_two} (in {}us)", start.elapsed().as_micros());
+  println!("Part 2: {part_two} (in {})", start.elapsed().display());
   Ok(())
 }
 

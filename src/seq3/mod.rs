@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul};
 
-use crate::exts::UnsignedExt;
+use crate::exts::numbers::UnsignedExt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Sequence {
