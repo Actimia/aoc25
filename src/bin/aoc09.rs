@@ -1,6 +1,6 @@
-use std::{fmt::Display, time::Instant};
+use std::fmt::Display;
 
-use aoc25::{exts::duration::DurationExt, grid::Grid, vex::Vex};
+use aoc25::{grid::Grid, time, time_quiet, vex::Vex};
 
 const INPUT: &str = include_str!("data/09.txt");
 
@@ -44,19 +44,18 @@ fn part_one(points: &Vec<Vex<i64, 2>>) -> u64 {
 fn add_line(grid: &mut Grid<Tile>, a: &Vex<i64, 2>, b: &Vex<i64, 2>) {
   let dir = *b - *a;
   if dir.x() == 0 {
-    let x = a.x();
+    let x = a.x() as usize;
     let start = a.y();
-    let dirsign = dir.0[1].signum();
-
-    for y in 0..=(dir.0[1].abs()) {
-      grid.set(x as usize, (start + (y * dirsign)) as usize, Tile::Edge);
+    let dirsign = dir.y().signum();
+    for y in 0..=(dir.y().abs()) {
+      grid.set(x, (start + (y * dirsign)) as usize, Tile::Edge);
     }
   } else if dir.y() == 0 {
-    let y = a.y();
+    let y = a.y() as usize;
     let start = a.x();
-    let dirsign = dir.0[0].signum();
-    for x in 0..=(dir.0[0].abs()) {
-      grid.set((start + (x * dirsign)) as usize, y as usize, Tile::Edge);
+    let dirsign = dir.x().signum();
+    for x in 0..=(dir.x().abs()) {
+      grid.set((start + (x * dirsign)) as usize, y, Tile::Edge);
     }
   }
 }
@@ -201,17 +200,9 @@ fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
-  let start = Instant::now();
-  let points = parse(INPUT)?;
-  println!("Parsed input (in {})", start.elapsed().display());
-
-  let start = Instant::now();
-  let part_one = part_one(&points);
-  println!("Part 1: {part_one} (in {})", start.elapsed().display());
-
-  let start = Instant::now();
-  let part_two = part_two(&points);
-  println!("Part 2: {part_two} (in {})", start.elapsed().display());
+  let points = time_quiet("Parsed input", || parse(INPUT))?;
+  time("Part 1", || part_one(&points));
+  time("Part 2", || part_two(&points));
   Ok(())
 }
 
