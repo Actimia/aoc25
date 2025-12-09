@@ -1,18 +1,19 @@
 use std::{collections::HashMap, time::Instant};
 
-use aoc25::{exts::duration::DurationExt, graph::Graph, graph_algo::search::SearchMode, vex::Vex};
+use aoc25::{exts::duration::DurationExt, graph::Graph, graph_algo::search::SearchMode};
+use glam::I64Vec3;
 use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/08.txt");
 
-fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<i64, 3>, u64>> {
-  let mut graph: Graph<Vex<i64, 3>, u64> = Graph::new();
+fn parse_graph(input: &str) -> anyhow::Result<Graph<I64Vec3, u64>> {
+  let mut graph: Graph<I64Vec3, u64> = Graph::new();
 
   let mut nodes = vec![];
   for line in input.lines() {
     let nums: Vec<i64> = line.split(',').flat_map(|x| x.parse()).collect();
     anyhow::ensure!(nums.len() == 3, "bad line ({line})");
-    nodes.push(Vex::new([nums[0], nums[1], nums[2]]));
+    nodes.push(I64Vec3::from_slice(nums.as_slice()));
   }
 
   for pos in &nodes {
@@ -25,7 +26,7 @@ fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<i64, 3>, u64>> {
       if n1 == n2 {
         continue;
       }
-      let dist = (*pos2 - *pos1).length2();
+      let dist = (*pos2 - *pos1).length_squared() as u64;
 
       if dist >= 7 * shortest {
         // this cutoff is somewhat arbitrary, but saves a lot of time
@@ -45,7 +46,7 @@ fn parse_graph(input: &str) -> anyhow::Result<Graph<Vex<i64, 3>, u64>> {
   Ok(graph)
 }
 
-fn count_circuits(graph: &Graph<Vex<i64, 3>, ()>) -> usize {
+fn count_circuits(graph: &Graph<I64Vec3, ()>) -> usize {
   let mut circuits: HashMap<usize, usize> = HashMap::default(); // size -> count
   let mut visited = vec![false; graph.num_nodes()];
 
@@ -65,9 +66,9 @@ fn count_circuits(graph: &Graph<Vex<i64, 3>, ()>) -> usize {
   circuits.keys().sorted().rev().take(3).product()
 }
 
-fn part_one(graph: &Graph<Vex<i64, 3>, u64>, count: usize) -> usize {
+fn part_one(graph: &Graph<I64Vec3, u64>, count: usize) -> usize {
   // 175500
-  let mut connections: Graph<Vex<i64, 3>, ()> = Graph::new();
+  let mut connections: Graph<I64Vec3, ()> = Graph::new();
   graph.nodes().for_each(|(_, n)| {
     connections.add_node(*n);
   });
@@ -87,7 +88,7 @@ fn part_one(graph: &Graph<Vex<i64, 3>, u64>, count: usize) -> usize {
   count_circuits(&connections)
 }
 
-fn part_two(graph: &Graph<Vex<i64, 3>, u64>) -> u64 {
+fn part_two(graph: &Graph<I64Vec3, u64>) -> u64 {
   // 2402892288: too low
   // 6934702555
 
@@ -113,7 +114,7 @@ fn part_two(graph: &Graph<Vex<i64, 3>, u64>) -> u64 {
       let from = graph.get_node(*from).unwrap();
       let to = graph.get_node(*to).unwrap();
 
-      return (from.x() * to.x()) as u64;
+      return (from.x * to.x) as u64;
     }
   }
   unreachable!()

@@ -77,20 +77,20 @@ impl<V, E> Graph<V, E> {
 
 #[cfg(test)]
 mod tests {
-  use crate::vex::Vex;
+  use glam::DVec2;
 
   use super::*;
 
   #[test]
   fn test_astar() {
-    let mut g: Graph<Vex<f64, 2>, ()> = Graph::new();
+    let mut g: Graph<DVec2, ()> = Graph::new();
 
-    g.add_node(Vex::new([0.0, 0.0]));
-    g.add_node(Vex::new([1.0, 1.0]));
-    g.add_node(Vex::new([0.0, 1.0]));
-    g.add_node(Vex::new([-1.0, 1.0]));
-    g.add_node(Vex::new([2.0, 0.0]));
-    g.add_node(Vex::new([6.0, 0.0]));
+    g.add_node(DVec2::new(0.0, 0.0));
+    g.add_node(DVec2::new(1.0, 1.0));
+    g.add_node(DVec2::new(0.0, 1.0));
+    g.add_node(DVec2::new(-1.0, 1.0));
+    g.add_node(DVec2::new(2.0, 0.0));
+    g.add_node(DVec2::new(6.0, 0.0));
 
     g.add_edge(0, 1, ());
     g.add_edge(1, 2, ());
@@ -99,7 +99,7 @@ mod tests {
     g.add_edge(1, 4, ());
 
     let target = g.get_node(4).unwrap();
-    let heuristic = move |node: &Vex<f64, 2>, _: &()| (*node - *target).length();
+    let heuristic = move |node: &DVec2, _: &()| (*node - *target).length();
     let result = g.astar(0, 4, heuristic);
     assert_eq!(result, Some(vec![0, 1, 4]));
 

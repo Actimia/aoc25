@@ -1,28 +1,29 @@
 use std::fmt::Display;
 
-use aoc25::{grid::Grid, time, time_quiet, vex::Vex};
+use aoc25::{grid::Grid, time, time_quiet};
+use glam::I64Vec2;
 
 const INPUT: &str = include_str!("data/09.txt");
 
-fn parse(input: &str) -> anyhow::Result<Vec<Vex<i64, 2>>> {
-  let nums: Vec<Vex<i64, 2>> = input
+fn parse(input: &str) -> anyhow::Result<Vec<I64Vec2>> {
+  let nums: Vec<I64Vec2> = input
     .lines()
     .flat_map(|l| {
       l.split_once(',')
         .into_iter()
-        .flat_map(|(x, y)| -> Result<_, anyhow::Error> { Ok(Vex::new([x.parse()?, y.parse()?])) })
+        .flat_map(|(x, y)| -> Result<_, anyhow::Error> { Ok(I64Vec2::new(x.parse()?, y.parse()?)) })
     })
     .collect();
   Ok(nums)
 }
 
-fn compute_rect(a: &Vex<i64, 2>, b: &Vex<i64, 2>) -> u64 {
-  let xdiff = a.x().abs_diff(b.x()) + 1;
-  let ydiff = a.y().abs_diff(b.y()) + 1;
+fn compute_rect(a: &I64Vec2, b: &I64Vec2) -> u64 {
+  let xdiff = a.x.abs_diff(b.x) + 1;
+  let ydiff = a.y.abs_diff(b.y) + 1;
   xdiff * ydiff
 }
 
-fn part_one(points: &Vec<Vex<i64, 2>>) -> u64 {
+fn part_one(points: &Vec<I64Vec2>) -> u64 {
   // 4777824480
   let mut largest = 0;
   for v1 in points {
@@ -41,20 +42,20 @@ fn part_one(points: &Vec<Vex<i64, 2>>) -> u64 {
   largest
 }
 
-fn add_line(grid: &mut Grid<Tile>, a: &Vex<i64, 2>, b: &Vex<i64, 2>) {
+fn add_line(grid: &mut Grid<Tile>, a: &I64Vec2, b: &I64Vec2) {
   let dir = *b - *a;
-  if dir.x() == 0 {
-    let x = a.x() as usize;
-    let start = a.y();
-    let dirsign = dir.y().signum();
-    for y in 0..=(dir.y().abs()) {
+  if dir.x == 0 {
+    let x = a.x as usize;
+    let start = a.y;
+    let dirsign = dir.y.signum();
+    for y in 0..=(dir.y.abs()) {
       grid.set(x, (start + (y * dirsign)) as usize, Tile::Edge);
     }
-  } else if dir.y() == 0 {
-    let y = a.y() as usize;
-    let start = a.x();
-    let dirsign = dir.x().signum();
-    for x in 0..=(dir.x().abs()) {
+  } else if dir.y == 0 {
+    let y = a.y as usize;
+    let start = a.x;
+    let dirsign = dir.x.signum();
+    for x in 0..=(dir.x.abs()) {
       grid.set((start + (x * dirsign)) as usize, y, Tile::Edge);
     }
   }
@@ -118,38 +119,38 @@ fn in_polygon(grid: &Grid<Tile>, x1: i64, y1: i64, x2: i64, y2: i64) -> bool {
 }
 
 struct Compressed {
-  points: Vec<Vex<i64, 2>>,
+  points: Vec<I64Vec2>,
   xs: Vec<i64>,
   ys: Vec<i64>,
 }
 
 impl Compressed {
-  fn compress(original: &Vec<Vex<i64, 2>>) -> Self {
-    let (mut xs, mut ys): (Vec<i64>, Vec<i64>) = original.iter().map(|v| (v.x(), v.y())).collect();
+  fn compress(original: &Vec<I64Vec2>) -> Self {
+    let (mut xs, mut ys): (Vec<i64>, Vec<i64>) = original.iter().map(|v| (v.x, v.y)).collect();
     xs.sort();
     ys.sort();
 
-    let points: Vec<Vex<i64, 2>> = original
+    let points: Vec<I64Vec2> = original
       .iter()
       .map(|v| {
-        Vex::new([
-          xs.iter().position(|x| *x == v.x()).unwrap() as i64 + 1,
-          ys.iter().position(|x| *x == v.y()).unwrap() as i64 + 1,
-        ])
+        I64Vec2::new(
+          xs.iter().position(|x| *x == v.x).unwrap() as i64 + 1,
+          ys.iter().position(|x| *x == v.y).unwrap() as i64 + 1,
+        )
       })
       .collect();
 
     Self { points, xs, ys }
   }
 
-  fn uncompress(&self, vex: &Vex<i64, 2>) -> Vex<i64, 2> {
-    let x = self.xs[vex.x() as usize - 1];
-    let y = self.ys[vex.y() as usize - 1];
-    Vex::new([x, y])
+  fn uncompress(&self, point: &I64Vec2) -> I64Vec2 {
+    let x = self.xs[point.x as usize - 1];
+    let y = self.ys[point.y as usize - 1];
+    I64Vec2::new(x, y)
   }
 }
 
-fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
+fn part_two(points: &Vec<I64Vec2>) -> u64 {
   // 1542119040
   let compressed = Compressed::compress(points);
 
@@ -187,10 +188,10 @@ fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
       }
 
       // x1y1 -> x1y2 -> x2y2 -> x2y1 -> x1y1
-      if in_polygon(&grid, v1.x(), v1.y(), v1.x(), v2.y())
-        && in_polygon(&grid, v1.x(), v2.y(), v2.x(), v2.y())
-        && in_polygon(&grid, v2.x(), v2.y(), v2.x(), v1.y())
-        && in_polygon(&grid, v2.x(), v1.y(), v1.x(), v1.y())
+      if in_polygon(&grid, v1.x, v1.y, v1.x, v2.y)
+        && in_polygon(&grid, v1.x, v2.y, v2.x, v2.y)
+        && in_polygon(&grid, v2.x, v2.y, v2.x, v1.y)
+        && in_polygon(&grid, v2.x, v1.y, v1.x, v1.y)
       {
         largest = area;
       }
