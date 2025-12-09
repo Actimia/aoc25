@@ -4,7 +4,7 @@ use std::{
 };
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
-pub struct Vex<T, const DIM: usize>([T; DIM]);
+pub struct Vex<T, const DIM: usize>(pub [T; DIM]);
 
 impl<T, const D: usize> Vex<T, D> {
   pub fn new(vals: impl Into<[T; D]>) -> Self {
