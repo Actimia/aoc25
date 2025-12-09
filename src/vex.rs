@@ -95,13 +95,27 @@ impl<const D: usize> Vex<i64, D> {
   }
 }
 
-impl<T: Copy> Vex<T, 3> {
+impl<T: Copy> Vex<T, 2> {
+  #[inline]
   pub fn x(&self) -> T {
     self.0[0]
   }
+  #[inline]
   pub fn y(&self) -> T {
     self.0[1]
   }
+}
+
+impl<T: Copy> Vex<T, 3> {
+  #[inline]
+  pub fn x(&self) -> T {
+    self.0[0]
+  }
+  #[inline]
+  pub fn y(&self) -> T {
+    self.0[1]
+  }
+  #[inline]
   pub fn z(&self) -> T {
     self.0[2]
   }

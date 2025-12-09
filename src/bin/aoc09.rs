@@ -17,8 +17,8 @@ fn parse(input: &str) -> anyhow::Result<Vec<Vex<i64, 2>>> {
 }
 
 fn compute_rect(a: &Vex<i64, 2>, b: &Vex<i64, 2>) -> u64 {
-  let xdiff = a.0[0].abs_diff(b.0[0]) + 1;
-  let ydiff = a.0[1].abs_diff(b.0[1]) + 1;
+  let xdiff = a.x().abs_diff(b.x()) + 1;
+  let ydiff = a.y().abs_diff(b.y()) + 1;
   xdiff * ydiff
 }
 
@@ -43,16 +43,16 @@ fn part_one(points: &Vec<Vex<i64, 2>>) -> u64 {
 
 fn add_line(grid: &mut Grid<Tile>, a: &Vex<i64, 2>, b: &Vex<i64, 2>) {
   let dir = *b - *a;
-  if dir.0[0] == 0 {
-    let x = a.0[0];
-    let start = a.0[1];
+  if dir.x() == 0 {
+    let x = a.x();
+    let start = a.y();
     let dirsign = dir.0[1].signum();
     for y in 0..=(dir.0[1].abs()) {
       grid.set(x as usize, (start + (y * dirsign)) as usize, Tile::Edge);
     }
-  } else if dir.0[1] == 0 {
-    let y = a.0[1];
-    let start = a.0[0];
+  } else if dir.y() == 0 {
+    let y = a.y();
+    let start = a.x();
     let dirsign = dir.0[0].signum();
     for x in 0..=(dir.0[0].abs()) {
       grid.set((start + (x * dirsign)) as usize, y as usize, Tile::Edge);
@@ -61,14 +61,19 @@ fn add_line(grid: &mut Grid<Tile>, a: &Vex<i64, 2>, b: &Vex<i64, 2>) {
 }
 
 fn flood_fill(grid: &mut Grid<Tile>) {
+  // (0,0) is guaranteed to not be in the polygon due to padding
   let mut queue = vec![(0, 0)];
   while let Some((x, y)) = queue.pop() {
     if let Some(Tile::Inside) = grid.get(x, y) {
       grid.set(x, y, Tile::Outside);
-      queue.push((x.saturating_sub(1), y));
+      if x != 0 {
+        queue.push((x - 1, y));
+      }
       queue.push((x + 1, y));
+      if y != 0 {
+        queue.push((x, y - 1));
+      }
       queue.push((x, y + 1));
-      queue.push((x, y.saturating_sub(1)));
     }
   }
 }
@@ -112,92 +117,79 @@ fn in_polygon(grid: &Grid<Tile>, x1: i64, y1: i64, x2: i64, y2: i64) -> bool {
   }
 }
 
+struct Compressed {
+  points: Vec<Vex<i64, 2>>,
+  xs: Vec<i64>,
+  ys: Vec<i64>,
+}
+
+impl Compressed {
+  fn compress(original: &Vec<Vex<i64, 2>>) -> Self {
+    let (mut xs, mut ys): (Vec<i64>, Vec<i64>) = original.iter().map(|v| (v.x(), v.y())).collect();
+    xs.sort();
+    ys.sort();
+
+    let points: Vec<Vex<i64, 2>> = original
+      .iter()
+      .map(|v| {
+        Vex::new([
+          xs.iter().position(|x| *x == v.x()).unwrap() as i64 + 1,
+          ys.iter().position(|x| *x == v.y()).unwrap() as i64 + 1,
+        ])
+      })
+      .collect();
+
+    Self { points, xs, ys }
+  }
+
+  fn uncompress(&self, vex: &Vex<i64, 2>) -> Vex<i64, 2> {
+    let x = self.xs[vex.x() as usize - 1];
+    let y = self.ys[vex.y() as usize - 1];
+    Vex::new([x, y])
+  }
+}
+
 fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
   // 1542119040
-  let compressed_xs = {
-    let mut xs: Vec<i64> = points.iter().map(|v| v.0[0]).collect();
-    xs.sort();
-    xs
-  };
-  let compressed_ys = {
-    let mut ys: Vec<i64> = points.iter().map(|v| v.0[1]).collect();
-    ys.sort();
-    ys
-  };
+  let compressed = Compressed::compress(points);
 
-  eprintln!(
-    "compressed ({}, {})",
-    compressed_xs.len(),
-    compressed_ys.len()
+  let mut grid = Grid::new(
+    compressed.xs.len() + 2,
+    compressed.ys.len() + 2,
+    Tile::Inside,
   );
 
-  let compressed: Vec<Vex<i64, 2>> = points
-    .iter()
-    .map(|v| {
-      Vex::new([
-        compressed_xs.iter().position(|x| *x == v.0[0]).unwrap() as i64 + 1,
-        compressed_ys.iter().position(|x| *x == v.0[1]).unwrap() as i64 + 1,
-      ])
-    })
-    .collect();
-
-  let uncompress = |v: &Vex<i64, 2>| {
-    let x = compressed_xs[v.0[0] as usize - 1];
-    let y = compressed_ys[v.0[1] as usize - 1];
-    Vex::new([x, y])
-  };
-
-  let grid_x = compressed_xs.len() + 2;
-  let grid_y = compressed_ys.len() + 2;
-
-  let mut grid = Grid::new(grid_x, grid_y, Tile::Inside);
-
-  for w in compressed.windows(2) {
-    let a = w[0];
-    let b = w[1];
-    add_line(&mut grid, &a, &b);
+  for w in compressed.points.windows(2) {
+    add_line(&mut grid, &w[0], &w[1]);
   }
   add_line(
     &mut grid,
-    compressed.first().unwrap(),
-    compressed.last().unwrap(),
+    compressed.points.first().unwrap(),
+    compressed.points.last().unwrap(),
   );
 
   flood_fill(&mut grid);
 
   let mut largest = 0;
-  for v1 in &compressed {
-    for v2 in &compressed {
+  for v1 in &compressed.points {
+    for v2 in &compressed.points {
       if v1 == v2 {
         continue;
       }
 
-      let unv1 = uncompress(v1);
-      let unv2 = uncompress(&v2);
-      let area = compute_rect(&unv1, &unv2);
+      let area = compute_rect(&compressed.uncompress(v1), &compressed.uncompress(v2));
       if area <= largest {
         continue;
       }
 
-      let x1 = v1.0[0];
-      let y1 = v1.0[1];
-      let x2 = v2.0[0];
-      let y2 = v2.0[1];
-
       // x1y1 -> x1y2 -> x2y2 -> x2y1 -> x1y1
-      if !in_polygon(&grid, x1, y1, x1, y2) {
-        continue;
+      if in_polygon(&grid, v1.x(), v1.y(), v1.x(), v2.y())
+        && in_polygon(&grid, v1.x(), v2.y(), v2.x(), v2.y())
+        && in_polygon(&grid, v2.x(), v2.y(), v2.x(), v1.y())
+        && in_polygon(&grid, v2.x(), v1.y(), v1.x(), v1.y())
+      {
+        largest = area;
       }
-      if !in_polygon(&grid, x1, y2, x2, y2) {
-        continue;
-      }
-      if !in_polygon(&grid, x2, y2, x2, y1) {
-        continue;
-      }
-      if !in_polygon(&grid, x2, y1, x1, y1) {
-        continue;
-      }
-      largest = area;
     }
   }
   largest
