@@ -1,6 +1,5 @@
-use std::time::Instant;
-
 use anyhow::{anyhow, bail, ensure};
+use aoc25::{exts::duration::DurationExt, time::time_try};
 
 const INPUT: &str = include_str!("data/06.txt");
 
@@ -153,17 +152,19 @@ fn part_two(problems: ProblemsTwo) -> Vec<u64> {
 }
 
 fn main() -> anyhow::Result<()> {
-  let start = Instant::now();
-  let problem = INPUT.try_into()?;
-  let totals_one = part_one(problem);
-  let part_one: u64 = totals_one.iter().sum();
-  println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
+  let (part_one, dur) = time_try(|| -> anyhow::Result<u64> {
+    let problem = INPUT.try_into()?;
+    let totals_one = part_one(problem);
+    Ok(totals_one.iter().sum())
+  })?;
+  println!("Part 1: {part_one} (in {})", dur.display());
 
-  let start = Instant::now();
-  let problem_two: ProblemsTwo = INPUT.try_into()?;
-  let totals_two = part_two(problem_two);
-  let part_two: u64 = totals_two.iter().sum();
-  println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
+  let (part_two, dur) = time_try(|| -> anyhow::Result<u64> {
+    let problem = INPUT.try_into()?;
+    let total = part_two(problem);
+    Ok(total.iter().sum())
+  })?;
+  println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
 

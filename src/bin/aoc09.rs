@@ -1,7 +1,12 @@
 use std::fmt::Display;
 
-use aoc25::{grid::Grid, time, time_quiet};
+use aoc25::{
+  exts::duration::DurationExt,
+  grid::Grid,
+  time::{time, time_try},
+};
 use glam::I64Vec2;
+use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/09.txt");
 
@@ -160,14 +165,9 @@ fn part_two(points: &Vec<I64Vec2>) -> u64 {
     Tile::Inside,
   );
 
-  for w in compressed.points.windows(2) {
-    add_line(&mut grid, &w[0], &w[1]);
+  for (a, b) in compressed.points.iter().circular_tuple_windows() {
+    add_line(&mut grid, &a, &b);
   }
-  add_line(
-    &mut grid,
-    compressed.points.first().unwrap(),
-    compressed.points.last().unwrap(),
-  );
 
   flood_fill(&mut grid);
 
@@ -201,9 +201,14 @@ fn part_two(points: &Vec<I64Vec2>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
-  let points = time_quiet("Parsed input", || parse(INPUT))?;
-  time("Part 1", || part_one(&points));
-  time("Part 2", || part_two(&points));
+  let (points, dur) = time_try(|| parse(INPUT))?;
+  println!("Parsed points in {}", dur.display());
+
+  let (part_one, dur) = time(|| part_one(&points));
+  println!("Part 1: {part_one} (in {})", dur.display());
+
+  let (part_two, dur) = time(|| part_two(&points));
+  println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
 

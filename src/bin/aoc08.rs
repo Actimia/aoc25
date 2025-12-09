@@ -1,6 +1,11 @@
-use std::{collections::HashMap, time::Instant};
+use std::collections::HashMap;
 
-use aoc25::{exts::duration::DurationExt, graph::Graph, graph_algo::search::SearchMode};
+use aoc25::{
+  exts::duration::DurationExt,
+  graph::Graph,
+  graph_algo::search::SearchMode,
+  time::{time, time_try},
+};
 use glam::I64Vec3;
 use itertools::Itertools;
 
@@ -121,17 +126,14 @@ fn part_two(graph: &Graph<I64Vec3, u64>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
-  let start = Instant::now();
-  let graph = parse_graph(INPUT)?;
-  println!("Parsed input in {}", start.elapsed().display());
+  let (graph, dur) = time_try(|| parse_graph(INPUT))?;
+  println!("Parsed input in {}", dur.display());
 
-  let start = Instant::now();
-  let part_one = part_one(&graph, 998);
-  println!("Part 1: {part_one} (in {})", start.elapsed().display());
+  let (part_one, dur) = time(|| part_one(&graph, 998));
+  println!("Part 1: {part_one} (in {})", dur.display());
 
-  let start = Instant::now();
-  let part_two = part_two(&graph);
-  println!("Part 2: {part_two} (in {})", start.elapsed().display());
+  let (part_two, dur) = time(|| part_two(&graph));
+  println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
 

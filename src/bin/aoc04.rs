@@ -1,7 +1,9 @@
-use std::time::Instant;
-
 use anyhow::bail;
-use aoc25::grid::Grid;
+use aoc25::{
+  exts::duration::DurationExt,
+  grid::Grid,
+  time::{time, time_try},
+};
 
 const INPUT: &str = include_str!("data/04.txt");
 
@@ -72,14 +74,14 @@ fn part_two(grid: Grid<MapCell>) -> usize {
 }
 
 fn main() -> anyhow::Result<()> {
-  let grid = Grid::from_str(INPUT)?;
-  let start = Instant::now();
-  let part_one = part_one(&grid);
-  println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
+  let (grid, dur) = time_try(|| Grid::from_str(INPUT))?;
+  println!("Parsed input in {}", dur.display());
 
-  let start = Instant::now();
-  let part_two = part_two(grid);
-  println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
+  let (part_one, dur) = time(|| part_one(&grid));
+  println!("Part 1: {part_one} (in {})", dur.display());
+
+  let (part_two, dur) = time(|| part_two(grid));
+  println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
 

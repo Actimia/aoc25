@@ -1,4 +1,9 @@
-use std::{ops::RangeInclusive, time::Instant};
+use std::ops::RangeInclusive;
+
+use aoc25::{
+  exts::duration::DurationExt,
+  time::{time, time_try},
+};
 
 const INPUT: &str = include_str!("data/05.txt");
 
@@ -80,13 +85,15 @@ fn part_two(inventory: Inventory) -> usize {
 }
 
 fn main() -> anyhow::Result<()> {
-  let start = Instant::now();
-  let part_one = part_one(INPUT.try_into()?);
-  println!("Part 1: {part_one} (in {}μs)", start.elapsed().as_micros());
+  let (inventory, dur) = time_try(|| INPUT.try_into())?;
+  println!("Parsed input in {}", dur.display());
 
-  let start = Instant::now();
-  let part_two = part_two(INPUT.try_into()?);
-  println!("Part 2: {part_two} (in {}μs)", start.elapsed().as_micros());
+  let (part_one, dur) = time(|| part_one(inventory));
+  println!("Part 1: {part_one} (in {})", dur.display());
+
+  let inventory = INPUT.try_into()?;
+  let (part_two, dur) = time(|| part_two(inventory));
+  println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
 

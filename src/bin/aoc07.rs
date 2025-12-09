@@ -1,7 +1,11 @@
-use std::{mem, time::Instant};
+use std::mem;
 
 use anyhow::bail;
-use aoc25::{exts::duration::DurationExt, grid::Grid};
+use aoc25::{
+  exts::duration::DurationExt,
+  grid::Grid,
+  time::{time, time_try},
+};
 use itertools::Itertools;
 
 const INPUT: &str = include_str!("data/07.txt");
@@ -85,17 +89,14 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
-  let start = Instant::now();
-  let manifold: Grid<TachyonManifold> = Grid::from_str(INPUT)?;
-  println!("Parsed input in {}", start.elapsed().display());
+  let (manifold, dur) = time_try(|| Grid::from_str(INPUT))?;
+  println!("Parsed input in {}", dur.display());
 
-  let start = Instant::now();
-  let part_one = part_one(&manifold);
-  println!("Part 1: {part_one} (in {})", start.elapsed().display());
+  let (part_one, dur) = time(|| part_one(&manifold));
+  println!("Part 1: {part_one} (in {})", dur.display());
 
-  let start = Instant::now();
-  let part_two = part_two(&manifold);
-  println!("Part 2: {part_two} (in {})", start.elapsed().display());
+  let (part_two, dur) = time(|| part_two(&manifold));
+  println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
 
