@@ -47,6 +47,7 @@ fn add_line(grid: &mut Grid<Tile>, a: &Vex<i64, 2>, b: &Vex<i64, 2>) {
     let x = a.x();
     let start = a.y();
     let dirsign = dir.0[1].signum();
+
     for y in 0..=(dir.0[1].abs()) {
       grid.set(x as usize, (start + (y * dirsign)) as usize, Tile::Edge);
     }
@@ -170,6 +171,9 @@ fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
 
   flood_fill(&mut grid);
 
+  #[cfg(test)]
+  eprintln!("{grid}");
+
   let mut largest = 0;
   for v1 in &compressed.points {
     for v2 in &compressed.points {
@@ -179,6 +183,7 @@ fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
 
       let area = compute_rect(&compressed.uncompress(v1), &compressed.uncompress(v2));
       if area <= largest {
+        // Skip expensive polygon check if this cannot be a candidate
         continue;
       }
 
@@ -228,5 +233,12 @@ mod tests {
     let points = parse(SAMPLE_INPUT).unwrap();
     let total = part_two(&points);
     assert_eq!(total, 24);
+  }
+
+  #[test]
+  fn from_online() {
+    let points = parse("1,0\n3,0\n3,6\n16,6\n16,0\n18,0\n18,9\n13,9\n13,7\n6,7\n6,9\n1,9").unwrap();
+    let total = part_two(&points);
+    assert_eq!(total, 30);
   }
 }
