@@ -23,6 +23,7 @@ fn compute_rect(a: &Vex<i64, 2>, b: &Vex<i64, 2>) -> u64 {
 }
 
 fn part_one(points: &Vec<Vex<i64, 2>>) -> u64 {
+  // 4777824480
   let mut largest = 0;
   for v1 in points {
     for v2 in points {
@@ -92,7 +93,7 @@ impl Display for Tile {
 fn in_polygon(grid: &Grid<Tile>, x1: i64, y1: i64, x2: i64, y2: i64) -> bool {
   if x1 == x2 {
     let x = x1;
-    for y in y1.min(y2)..=y1.max(y2) {
+    for y in y1.min(y2)..y1.max(y2) {
       if let Some(Tile::Outside) = grid.get(x as usize, y as usize) {
         return false;
       }
@@ -100,7 +101,7 @@ fn in_polygon(grid: &Grid<Tile>, x1: i64, y1: i64, x2: i64, y2: i64) -> bool {
     return true;
   } else if y1 == y2 {
     let y = y1;
-    for x in x1.min(x2)..=x1.max(x2) {
+    for x in x1.min(x2)..x1.max(x2) {
       if let Some(Tile::Outside) = grid.get(x as usize, y as usize) {
         return false;
       }
@@ -112,6 +113,7 @@ fn in_polygon(grid: &Grid<Tile>, x1: i64, y1: i64, x2: i64, y2: i64) -> bool {
 }
 
 fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
+  // 1542119040
   let compressed_xs = {
     let mut xs: Vec<i64> = points.iter().map(|v| v.0[0]).collect();
     xs.sort();
@@ -170,6 +172,13 @@ fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
         continue;
       }
 
+      let unv1 = uncompress(v1);
+      let unv2 = uncompress(&v2);
+      let area = compute_rect(&unv1, &unv2);
+      if area <= largest {
+        continue;
+      }
+
       let x1 = v1.0[0];
       let y1 = v1.0[1];
       let x2 = v2.0[0];
@@ -188,14 +197,7 @@ fn part_two(points: &Vec<Vex<i64, 2>>) -> u64 {
       if !in_polygon(&grid, x2, y1, x1, y1) {
         continue;
       }
-
-      let unv1 = uncompress(v1);
-      let unv2 = &uncompress(&v2);
-      let area = compute_rect(&unv1, &unv2);
-      if area > largest {
-        // eprintln!("rect: {:?}, {:?} = {}", unv1, unv2, area);
-        largest = area;
-      }
+      largest = area;
     }
   }
   largest
