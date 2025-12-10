@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
 
 use aoc25::{
-  exts::duration::DurationExt,
+  exts::{duration::DurationExt, iterator::IteratorExt},
   time::{time, time_try},
 };
 
@@ -23,13 +23,18 @@ impl TryFrom<&str> for Inventory {
 
     let fresh_ranges = ranges
       .lines()
-      .flat_map(|l| -> anyhow::Result<RangeInclusive<u64>> {
+      .map(|l| -> anyhow::Result<RangeInclusive<u64>> {
         let (lo, hi) = l.split_once("-").ok_or(anyhow::anyhow!("range missing"))?;
         Ok((lo.parse()?)..=(hi.parse()?))
       })
+      .flatten_verbose()
       .collect();
 
-    let ids = ids.lines().flat_map(|l| l.parse()).collect();
+    let ids = ids
+      .lines()
+      .map(|l| l.parse::<u64>())
+      .flatten_verbose()
+      .collect();
 
     Ok(Inventory {
       fresh: fresh_ranges,
@@ -41,10 +46,10 @@ impl TryFrom<&str> for Inventory {
 #[allow(unused)]
 fn part_one(inventory: Inventory) -> usize {
   // 712
-  inventory
-    .ids
+  let Inventory { ids, fresh } = inventory;
+  ids
     .iter()
-    .filter(|id| inventory.fresh.iter().any(|r| r.contains(id)))
+    .filter(|id| fresh.iter().any(|r| r.contains(id)))
     .count()
 }
 

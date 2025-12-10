@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::hash::Hash;
 
 pub trait IteratorExt: Iterator + Sized {
@@ -36,6 +37,13 @@ pub trait IteratorExt: Iterator + Sized {
   {
     vec![].into_iter()
   } */
+  fn flatten_verbose<T, E>(self) -> impl Iterator<Item = T>
+  where
+    Self: Iterator<Item = Result<T, E>>,
+    E: Debug,
+  {
+    VerboseFlatten { iter: self }
+  }
 }
 
 impl<T: Iterator> IteratorExt for T {}
@@ -71,6 +79,33 @@ where
     self.cur += 1;
 
     Some(item)
+  }
+}
+
+pub struct VerboseFlatten<I> {
+  iter: I,
+}
+
+impl<I, T, E> Iterator for VerboseFlatten<I>
+where
+  I: Iterator<Item = Result<T, E>>,
+  E: Debug,
+{
+  type Item = T;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    loop {
+      match self.iter.next() {
+        Some(r) => match r {
+          Ok(item) => break Some(item),
+          Err(e) => {
+            eprintln!("{:?}", e);
+            continue;
+          }
+        },
+        None => break None,
+      };
+    }
   }
 }
 

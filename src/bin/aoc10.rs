@@ -7,7 +7,7 @@ use aoc25::{
   exts::duration::DurationExt,
   time::{time, time_try},
 };
-use glam::I64Vec2;
+use microlp::{ComparisonOp, LinearExpr, OptimizationDirection, Problem};
 
 const INPUT: &str = include_str!("data/10.txt");
 
@@ -94,6 +94,7 @@ fn search_buttons(initial: Vec<bool>, machine: &Machine) -> usize {
 }
 
 fn part_one(machines: &Vec<Machine>) -> usize {
+  // 399
   let mut total = 0;
   for (idx, machine) in machines.iter().enumerate() {
     let initial = vec![false; machine.target.len()];
@@ -104,21 +105,34 @@ fn part_one(machines: &Vec<Machine>) -> usize {
   total
 }
 
-fn toggle_joltage(current: &Vec<u32>, button: &Vec<u32>) -> Vec<u32> {
+fn toggle_joltage(current: &Vec<u32>, button: &Vec<u32>, target: &Vec<u32>) -> Option<Vec<u32>> {
   let mut new = current.clone();
+  let mut incremented = 0;
+  let mut overflows = 0;
   for index in button {
-    new[*index as usize] += 1;
+    let index = *index as usize;
+    new[index] += 1;
+    incremented += 1;
+    if new[index] > target[index] {
+      overflows += 1
+    }
   }
-  new
+  if overflows >= incremented {
+    None
+  } else {
+    Some(new)
+  }
 }
 
+#[derive(Debug)]
 struct HeuristicCost(u32, Vec<u32>, usize);
 
 impl HeuristicCost {
   fn from(steps: usize, vec: Vec<u32>, target: &Vec<u32>) -> Self {
-    let diff = vec
+    let diff: u32 = vec
       .iter()
       .zip(target.iter())
+      .filter(|(a, b)| a < b)
       .map(|(a, b)| a.abs_diff(*b))
       .sum();
     Self(diff, vec, steps)
@@ -127,61 +141,96 @@ impl HeuristicCost {
 
 impl PartialEq for HeuristicCost {
   fn eq(&self, other: &Self) -> bool {
-    self.0 == other.0
+    self.0 == other.0 && self.1 == other.1 && self.2 == other.2
   }
 }
 impl Eq for HeuristicCost {}
+
 impl PartialOrd for HeuristicCost {
   #[expect(clippy::non_canonical_partial_ord_impl)]
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    Some(self.0.cmp(&other.0))
+    Some(
+      self
+        .2
+        .cmp(&other.2)
+        .then(self.0.cmp(&other.0))
+        .then(self.1.cmp(&other.1)),
+    )
   }
 }
 impl Ord for HeuristicCost {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.0.cmp(&other.0)
+    self.partial_cmp(other).unwrap()
   }
 }
 
 fn search_joltage(initial: Vec<u32>, machine: &Machine) -> usize {
   let mut heap: BTreeSet<HeuristicCost> = BTreeSet::new();
   heap.insert(HeuristicCost::from(0, initial, &machine.joltage));
-  //search(initial, machine);
+
+  // let max_step = machine.buttons.iter().map(|x| x.len()).max().unwrap();
   let mut min_steps = usize::MAX;
 
-  while let Some(HeuristicCost(_, current, steps)) = heap.pop_last() {
+  let mut cur_step = 0;
+
+  while let Some(HeuristicCost(dist, current, steps)) = heap.pop_first() {
     if steps >= min_steps {
-      eprintln!("abort due to steps");
-      continue;
-    }
-    if current == machine.joltage {
-      eprintln!("found in {steps}");
-      min_steps = steps.min(min_steps);
-      continue;
-    }
-    if current
-      .iter()
-      .zip(machine.joltage.iter())
-      .any(|(a, b)| *a > *b)
-    {
-      eprintln!("abort due to too high {:?} {:?}", current, machine.joltage);
+      // eprintln!("abort due to steps ({steps} >= {min_steps})");
       continue;
     }
 
-    machine.buttons.iter().for_each(|buttons| {
-      let toggled = toggle_joltage(&current, buttons);
-      eprintln!("{current:?} + {buttons:?} = {toggled:?}");
-      heap.insert(HeuristicCost::from(steps + 1, toggled, &machine.joltage));
-    })
+    if steps > cur_step {
+      cur_step = steps;
+      let s = heap.len();
+      heap.retain(|x| x.0 < 2 * dist);
+      eprintln!("step {} (-{}, {})", steps, s - heap.len(), heap.len());
+    }
+    if dist == 0 {
+      min_steps = steps.min(min_steps);
+      /* eprintln!(
+        "Found solution in {steps}: {current:?} > {:?})",
+        machine.joltage
+      ); */
+      return min_steps;
+    }
+
+    for next in machine
+      .buttons
+      .iter()
+      .flat_map(|buttons| toggle_joltage(&current, buttons, &machine.joltage))
+      .map(|toggled| HeuristicCost::from(steps + 1, toggled, &machine.joltage))
+    {
+      heap.insert(next);
+    }
   }
   min_steps
 }
 
+fn search_joltage2(machine: &Machine) -> usize {
+  let buttons = machine.buttons.clone();
+  let joltage = machine.joltage.clone();
+  let mut problem = Problem::new(OptimizationDirection::Minimize);
+  let mut vars = Vec::new();
+  for _ in 0..buttons.len() {
+    vars.push(problem.add_integer_var(1.0, (0, i32::MAX)));
+  }
+  for constraint in 0..joltage.len() {
+    let mut equation = LinearExpr::empty();
+    for variable in 0..buttons.len() {
+      if let Some(_) = buttons[variable].iter().find(|x| **x == constraint as u32) {
+        equation.add(vars[variable], 1.0);
+      }
+    }
+    problem.add_constraint(equation, ComparisonOp::Eq, joltage[constraint] as f64);
+  }
+  problem.solve().unwrap().objective().round() as usize
+}
+
 fn part_two(machines: &Vec<Machine>) -> usize {
+  // 16329: too high
   let mut total = 0;
   for (idx, machine) in machines.iter().enumerate() {
-    let initial = vec![0; machine.joltage.len()];
-    let steps = search_joltage(initial, machine);
+    let steps = search_joltage2(machine);
     eprintln!("machine {idx} took {steps} steps");
     total += steps;
   }
@@ -206,7 +255,7 @@ mod tests {
   use super::*;
 
   const SAMPLE_INPUT: &str = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}\n[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}\n[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}";
-  /*
+
   #[test]
   fn test_one() {
     let points = parse(SAMPLE_INPUT).unwrap();
@@ -219,12 +268,12 @@ mod tests {
     let machine = parse(SAMPLE_INPUT).unwrap();
     let total = part_two(&machine);
     assert_eq!(total, 33);
-  } */
+  }
 
   #[test]
   fn test_single() {
     let machine = parse("[.#...###] (2,3,4,5,6) (6,7) (0,1,3,5,6,7) (0,1,2,4,5,7) (1,3) (2,5) (1,2,4,5,6) (2,4,7) (1,4,5,6) {31,204,38,170,42,69,55,51}").unwrap();
     let total = part_two(&machine);
-    assert_eq!(total, 33);
+    assert_eq!(total, 230);
   }
 }
