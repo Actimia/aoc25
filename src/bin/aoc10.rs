@@ -1,7 +1,4 @@
-use std::{
-  collections::{BTreeSet, VecDeque},
-  str::FromStr,
-};
+use std::{collections::VecDeque, str::FromStr};
 
 use aoc25::{
   exts::duration::DurationExt,
@@ -96,15 +93,16 @@ fn search_buttons(initial: Vec<bool>, machine: &Machine) -> usize {
 fn part_one(machines: &Vec<Machine>) -> usize {
   // 399
   let mut total = 0;
-  for (idx, machine) in machines.iter().enumerate() {
+  for (_idx, machine) in machines.iter().enumerate() {
     let initial = vec![false; machine.target.len()];
     let steps = search_buttons(initial, machine);
-    eprintln!("machine {idx} took {steps} steps");
+    // eprintln!("machine {_idx} took {steps} steps");
     total += steps;
   }
   total
 }
 
+/*
 fn toggle_joltage(current: &Vec<u32>, button: &Vec<u32>, target: &Vec<u32>) -> Option<Vec<u32>> {
   let mut new = current.clone();
   let mut incremented = 0;
@@ -205,33 +203,34 @@ fn search_joltage(initial: Vec<u32>, machine: &Machine) -> usize {
   }
   min_steps
 }
+*/
 
-fn search_joltage2(machine: &Machine) -> usize {
-  let buttons = machine.buttons.clone();
-  let joltage = machine.joltage.clone();
+fn solve_joltage(machine: &Machine) -> u64 {
   let mut problem = Problem::new(OptimizationDirection::Minimize);
-  let mut vars = Vec::new();
-  for _ in 0..buttons.len() {
-    vars.push(problem.add_integer_var(1.0, (0, i32::MAX)));
-  }
-  for constraint in 0..joltage.len() {
+  let vars: Vec<_> = machine
+    .buttons
+    .iter()
+    .map(|_| problem.add_integer_var(1.0, (0, i32::MAX)))
+    .collect();
+
+  for (index, joltage) in machine.joltage.iter().enumerate() {
     let mut equation = LinearExpr::empty();
-    for variable in 0..buttons.len() {
-      if let Some(_) = buttons[variable].iter().find(|x| **x == constraint as u32) {
-        equation.add(vars[variable], 1.0);
+    for (button, var) in machine.buttons.iter().zip(vars.iter()) {
+      if button.contains(&(index as u32)) {
+        equation.add(*var, 1.0);
       }
     }
-    problem.add_constraint(equation, ComparisonOp::Eq, joltage[constraint] as f64);
+    problem.add_constraint(equation, ComparisonOp::Eq, *joltage as f64);
   }
-  problem.solve().unwrap().objective().round() as usize
+  problem.solve().unwrap().objective().round() as u64
 }
 
-fn part_two(machines: &Vec<Machine>) -> usize {
+fn part_two(machines: &Vec<Machine>) -> u64 {
   // 16329: too high
+  // 15631
   let mut total = 0;
-  for (idx, machine) in machines.iter().enumerate() {
-    let steps = search_joltage2(machine);
-    eprintln!("machine {idx} took {steps} steps");
+  for machine in machines {
+    let steps = solve_joltage(machine);
     total += steps;
   }
   total
