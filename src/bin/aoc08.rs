@@ -126,6 +126,7 @@ fn part_two(graph: &Graph<I64Vec3, u64>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 08: Playground");
   let (graph, dur) = time_try(|| parse_graph(INPUT))?;
   println!("Parsed input in {}", dur.display());
 

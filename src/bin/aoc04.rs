@@ -74,6 +74,7 @@ fn part_two(grid: Grid<MapCell>) -> usize {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 04: Printing Department");
   let (grid, dur) = time_try(|| Grid::from_str(INPUT))?;
   println!("Parsed input in {}", dur.display());
 

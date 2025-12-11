@@ -201,8 +201,9 @@ fn part_two(points: &Vec<I64Vec2>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 09: Movie Theater");
   let (points, dur) = time_try(|| parse(INPUT))?;
-  println!("Parsed points in {}", dur.display());
+  println!("Parsed input in {}", dur.display());
 
   let (part_one, dur) = time(|| part_one(&points));
   println!("Part 1: {part_one} (in {})", dur.display());

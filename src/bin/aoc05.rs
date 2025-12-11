@@ -90,6 +90,7 @@ fn part_two(inventory: Inventory) -> usize {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 05: Cafeteria");
   let (inventory, dur) = time_try(|| INPUT.try_into())?;
   println!("Parsed input in {}", dur.display());
 

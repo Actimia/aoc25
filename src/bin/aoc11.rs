@@ -24,7 +24,7 @@ impl FromStr for Network {
       let outputs: Vec<_> = outputs
         .trim()
         .split_whitespace()
-        .map(|o| o.to_owned())
+        .map(str::to_owned)
         .collect();
 
       let host = host.trim().to_owned();
@@ -35,7 +35,7 @@ impl FromStr for Network {
 }
 
 fn part_one(Network(net): &Network) -> u64 {
-  //
+  // 696
   let mut total = 0;
 
   let mut queue = VecDeque::new();
@@ -57,7 +57,6 @@ fn part_one(Network(net): &Network) -> u64 {
   total
 }
 
-// total, dac, fft, both
 #[derive(Clone, Copy, Debug, Default)]
 struct Counter {
   count: u64,
@@ -65,6 +64,16 @@ struct Counter {
   fft: u64,
   both: u64,
 }
+
+impl Counter {
+  fn new(count: u64) -> Self {
+    Self {
+      count,
+      ..Self::default()
+    }
+  }
+}
+
 impl Add for Counter {
   type Output = Self;
 
@@ -82,34 +91,31 @@ fn part_two(net: Network) -> u64 {
   // 2844318424: too low
   // 6547319709817560: too high
   // 473741288064360
-  fn count(net: &Network, node: &str, cache: &mut HashMap<String, Counter>) -> Counter {
+  fn count<'a>(net: &'a Network, node: &'a str, cache: &mut HashMap<&'a str, Counter>) -> Counter {
     if let Some(cached) = cache.get(node) {
       return *cached;
     }
 
-    let mut count = if let Some(edges) = net.0.get(node) {
-      edges
+    let mut counter = if let Some(neighbors) = net.0.get(node) {
+      neighbors
         .iter()
-        .map(|e| count(net, e, cache))
-        .reduce(|a, b| a + b)
+        .map(|node| count(net, node, cache))
+        .reduce(Counter::add)
         .unwrap()
     } else {
-      Counter {
-        count: 1,
-        ..Counter::default()
-      }
+      // no neighbors => is out
+      Counter::new(1)
     };
 
     if node == "dac" {
-      count.dac = count.count;
-      count.both = count.fft.min(count.dac);
+      counter.dac = counter.count;
+      counter.both = counter.fft.min(counter.dac);
+    } else if node == "fft" {
+      counter.fft = counter.count;
+      counter.both = counter.fft.min(counter.dac);
     }
-    if node == "fft" {
-      count.fft = count.count;
-      count.both = count.fft.min(count.dac);
-    }
-    cache.insert(node.to_owned(), count);
-    count
+    cache.insert(node, counter);
+    counter
   }
 
   let res = count(&net, "svr", &mut HashMap::new());
@@ -117,15 +123,13 @@ fn part_two(net: Network) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 11: Reactor");
   let (network, dur) = time_try(|| INPUT.parse())?;
-  println!("Parsed points in {}", dur.display());
-
+  println!("Parsed input in {}", dur.display());
   let (part_one, dur) = time(|| part_one(&network));
   println!("Part 1: {part_one} (in {})", dur.display());
-
   let (part_two, dur) = time(|| part_two(network));
   println!("Part 2: {part_two} (in {})", dur.display());
-
   Ok(())
 }
 
@@ -142,11 +146,11 @@ mod tests {
     assert_eq!(total, 5);
   }
 
-  const SAMPLE_INPUT2: &str = "svr: aaa bbb\naaa: fft\nfft: ccc\nbbb: tty\ntty: ccc\nccc: ddd eee\nddd: hub\nhub: fff\neee: dac\ndac: fff\nfff: ggg hhh\nggg: out\nhhh: out";
+  const SAMPLE_INPUT_TWO: &str = "svr: aaa bbb\naaa: fft\nfft: ccc\nbbb: tty\ntty: ccc\nccc: ddd eee\nddd: hub\nhub: fff\neee: dac\ndac: fff\nfff: ggg hhh\nggg: out\nhhh: out";
 
   #[test]
   fn test_two() {
-    let machine = SAMPLE_INPUT2.parse().unwrap();
+    let machine = SAMPLE_INPUT_TWO.parse().unwrap();
     let total = part_two(machine);
     assert_eq!(total, 2);
   }

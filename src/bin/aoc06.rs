@@ -152,6 +152,7 @@ fn part_two(problems: ProblemsTwo) -> Vec<u64> {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 06: Trash Compactor");
   let (part_one, dur) = time_try(|| -> anyhow::Result<u64> {
     let problem = INPUT.try_into()?;
     let totals_one = part_one(problem);

@@ -1,7 +1,10 @@
 use std::fmt::Display;
 
+use aoc25::{exts::duration::DurationExt, time::time};
+
 const INPUT: &str = include_str!("data/03.txt");
 
+#[derive(Clone, Debug)]
 struct Bank(Vec<u32>);
 
 impl TryFrom<&str> for Bank {
@@ -39,8 +42,6 @@ impl Bank {
     let second = search2.iter().max()?;
 
     let max = (10 * first) + second;
-    println!("{self}");
-    println!("{first_index}: {first}, {second} ({max})");
     Some(max)
   }
 
@@ -69,9 +70,16 @@ impl Bank {
 }
 
 fn main() -> anyhow::Result<()> {
-  let banks = INPUT.lines().flat_map(Bank::try_from);
-  let total: u64 = banks.flat_map(|b| b.part_two()).sum();
-  println!("{total}");
+  println!("AoC Day 03: Lobby");
+  let (banks, dur) = time(|| INPUT.lines().flat_map(Bank::try_from).collect::<Vec<_>>());
+  println!("Parsed input in {}", dur.display());
+
+  let banks1 = banks.clone();
+  let (part_one, dur) = time(|| banks1.iter().flat_map(|b| b.part_one()).sum::<u32>());
+  println!("Part 1: {part_one} (in {})", dur.display());
+
+  let (part_two, dur) = time(|| banks.iter().flat_map(|b| b.part_two()).sum::<u64>());
+  println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
 
@@ -80,13 +88,7 @@ mod tests {
   use super::*;
 
   #[test]
-  fn test_parsing() {
-    let bank: Bank = "123456".try_into().unwrap();
-    assert_eq!(bank.0, vec![1, 2, 3, 4, 5, 6])
-  }
-
-  #[test]
-  fn test_part_one() {
+  fn test_one() {
     let bank: Bank = "123456123".try_into().unwrap();
     assert_eq!(bank.part_one(), Some(63));
 
@@ -103,7 +105,7 @@ mod tests {
   }
 
   #[test]
-  fn test_part_two() {
+  fn test_two() {
     let bank: Bank = "987654321111111".try_into().unwrap();
     assert_eq!(bank.part_two(), Some(987654321111));
     let bank: Bank = "811111111111119".try_into().unwrap();

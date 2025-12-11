@@ -237,8 +237,9 @@ fn part_two(machines: &Vec<Machine>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 10: Factory");
   let (machines, dur) = time_try(|| parse(INPUT))?;
-  println!("Parsed points in {}", dur.display());
+  println!("Parsed input in {}", dur.display());
 
   let (part_one, dur) = time(|| part_one(&machines));
   println!("Part 1: {part_one} (in {})", dur.display());

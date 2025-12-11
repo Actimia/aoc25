@@ -89,6 +89,7 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
 }
 
 fn main() -> anyhow::Result<()> {
+  println!("AoC Day 07: Laboratories");
   let (manifold, dur) = time_try(|| Grid::from_str(INPUT))?;
   println!("Parsed input in {}", dur.display());
 
