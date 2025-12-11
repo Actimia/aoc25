@@ -6,7 +6,6 @@ use std::{
 
 use aoc25::{
   exts::duration::DurationExt,
-  graph::Graph,
   time::{time, time_try},
 };
 
@@ -32,36 +31,6 @@ impl FromStr for Network {
       map.insert(host, outputs);
     }
     Ok(Self(map))
-  }
-}
-
-impl Network {
-  fn to_graph(self) -> (Graph<String, usize>, HashMap<String, usize>) {
-    let net = self.0;
-
-    let mut graph = Graph::new();
-    graph.add_node("out".to_owned());
-
-    let mut map = HashMap::new();
-    map.insert("out".to_owned(), 0);
-
-    for node in net.keys() {
-      let i = graph.add_node(node.clone());
-      map.insert(node.clone(), i);
-    }
-
-    // eprintln!("{map:?}");
-    for (node, edges) in &net {
-      let src = map.get(node).unwrap();
-
-      for edge in edges {
-        if let Some(dst) = map.get(edge) {
-          graph.add_edge(*src, *dst, *src);
-        }
-      }
-    }
-
-    (graph, map)
   }
 }
 
