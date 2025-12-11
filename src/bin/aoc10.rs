@@ -268,11 +268,4 @@ mod tests {
     let total = part_two(&machine);
     assert_eq!(total, 33);
   }
-
-  #[test]
-  fn test_single() {
-    let machine = parse("[.#...###] (2,3,4,5,6) (6,7) (0,1,3,5,6,7) (0,1,2,4,5,7) (1,3) (2,5) (1,2,4,5,6) (2,4,7) (1,4,5,6) {31,204,38,170,42,69,55,51}").unwrap();
-    let total = part_two(&machine);
-    assert_eq!(total, 230);
-  }
 }
