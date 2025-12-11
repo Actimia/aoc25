@@ -1,5 +1,6 @@
 use std::{
   collections::{HashMap, VecDeque},
+  ops::Add,
   str::FromStr,
 };
 
@@ -87,62 +88,63 @@ fn part_one(Network(net): &Network) -> u64 {
   total
 }
 
+// total, dac, fft, both
+#[derive(Clone, Copy, Debug, Default)]
+struct Counter {
+  count: u64,
+  dac: u64,
+  fft: u64,
+  both: u64,
+}
+impl Add for Counter {
+  type Output = Self;
+
+  fn add(self, rhs: Self) -> Self::Output {
+    Self {
+      count: self.count + rhs.count,
+      dac: self.dac + rhs.dac,
+      fft: self.fft + rhs.fft,
+      both: self.both + rhs.both,
+    }
+  }
+}
+
 fn part_two(net: Network) -> u64 {
-  //
-  //let mut total = 0;
-
-  let (graph, map) = net.to_graph();
-
-  let out = map.get("out").unwrap();
-  // let svr = map.get("svr").unwrap();
-
-  let mut stack = VecDeque::new();
-  stack.push_back(*out);
-
-  let mut result = vec![(0, 0, 0, 0); graph.num_nodes()];
-
-  while let Some(node) = stack.pop_front() {
-    let name = graph.get_node(node).unwrap();
-
-    let mut paths = 0;
-    if name == "out" {
-      paths = 1
+  // 2844318424: too low
+  // 6547319709817560: too high
+  // 473741288064360
+  fn count(net: &Network, node: &str, cache: &mut HashMap<String, Counter>) -> Counter {
+    if let Some(cached) = cache.get(node) {
+      return *cached;
     }
-    let mut paths_dac = 0;
-    let mut paths_fft = 0;
-    let mut paths_both = 0;
 
-    for (next, from, (to, dac, fft, both)) in
-      graph.neighbors(node).map(|(n, from)| (n, from, result[n]))
-    {
-      if next != *from {
-        stack.push_front(next);
-      } else {
-        paths += to;
-        paths_dac += dac;
-        paths_fft += fft;
-        paths_both += both;
+    let mut count = if let Some(edges) = net.0.get(node) {
+      edges
+        .iter()
+        .map(|e| count(net, e, cache))
+        .reduce(|a, b| a + b)
+        .unwrap()
+    } else {
+      Counter {
+        count: 1,
+        ..Counter::default()
       }
-    }
+    };
 
-    if name == "dac" {
-      paths_dac = paths;
-      paths_both = paths_fft + paths;
-      eprintln!("found dac")
+    if node == "dac" {
+      count.dac = count.count;
+      count.both = count.fft.min(count.dac);
     }
-
-    if name == "fft" {
-      paths_fft = paths;
-      paths_both = paths_dac + paths;
-      eprintln!("found fft")
+    if node == "fft" {
+      count.fft = count.count;
+      count.both = count.fft.min(count.dac);
     }
-
-    result[node] = (paths, paths_dac, paths_fft, paths_both);
+    cache.insert(node.to_owned(), count);
+    count
   }
 
-  // eprintln!("{result:?}");
-  let (_, _, _, paths) = result[*map.get("svr").unwrap()];
-  paths
+  let res = count(&net, "svr", &mut HashMap::new());
+  res.both
 }
 
 fn main() -> anyhow::Result<()> {
