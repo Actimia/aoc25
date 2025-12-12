@@ -137,25 +137,25 @@ impl<T> Grid<T> {
     }
   }
 
-  pub fn row(&self, row: usize) -> impl Iterator<Item = &T> {
+  pub fn row(&self, row: usize) -> impl DoubleEndedIterator<Item = &T> {
     let start = row * self.cols();
     let end = start + self.cols();
     self.data[start..end].iter()
   }
 
-  pub fn row_mut(&mut self, row: usize) -> impl Iterator<Item = &mut T> {
+  pub fn row_mut(&mut self, row: usize) -> impl DoubleEndedIterator<Item = &mut T> {
     let start = row * self.cols();
     let end = start + self.cols();
     self.data[start..end].iter_mut()
   }
 
-  pub fn col(&self, col: usize) -> impl Iterator<Item = &T> {
+  pub fn col(&self, col: usize) -> impl DoubleEndedIterator<Item = &T> {
     let start = self.get_index(0, col).unwrap();
     let step = self.cols();
     self.data[start..].iter().step_by(step)
   }
 
-  pub fn col_mut(&mut self, col: usize) -> impl Iterator<Item = &mut T> {
+  pub fn col_mut(&mut self, col: usize) -> impl DoubleEndedIterator<Item = &mut T> {
     let start = self.get_index(0, col).unwrap();
     let step = self.cols();
     self.data[start..].iter_mut().step_by(step)
@@ -239,6 +239,32 @@ impl<T> Grid<T> {
     let data: Vec<T> = (0..self.cols())
       .map(|c| self.col(c).cloned())
       .flatten()
+      .collect();
+
+    Grid::from_data(data, self.rows()).unwrap()
+  }
+
+  pub fn rotate(&self) -> Self
+  where
+    T: Clone,
+  {
+    let data: Vec<_> = (0..self.cols())
+      .rev()
+      .flat_map(|x| self.col(x))
+      .cloned()
+      .collect();
+
+    Grid::from_data(data, self.rows()).unwrap()
+  }
+
+  pub fn flip(&self) -> Self
+  where
+    T: Clone,
+  {
+    let data: Vec<_> = (0..self.rows())
+      .rev()
+      .flat_map(|x| self.row(x).rev())
+      .cloned()
       .collect();
 
     Grid::from_data(data, self.rows()).unwrap()
