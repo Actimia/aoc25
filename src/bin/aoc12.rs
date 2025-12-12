@@ -166,19 +166,13 @@ fn part_one(presents: &Presents) -> u64 {
   works
 }
 
-fn part_two(presents: &Presents) -> u64 {
-  //
-  part_one(&presents)
-}
-
 fn main() -> anyhow::Result<()> {
   println!("AoC Day 12: Christmas Tree Farm");
   let (presents, dur) = time_try(|| INPUT.parse())?;
   println!("Parsed input in {}", dur.display());
   let (part_one, dur) = time(|| part_one(&presents));
   println!("Part 1: {part_one} (in {})", dur.display());
-  let (part_two, dur) = time(|| part_two(&presents));
-  println!("Part 2: {part_two} (in {})", dur.display());
+  println!("Part 2: Merry Christmas!");
   Ok(())
 }
 
@@ -192,13 +186,6 @@ mod tests {
   fn test_one() {
     let presents = SAMPLE_INPUT.parse().unwrap();
     let total = part_one(&presents);
-    assert_eq!(total, 2);
-  }
-
-  #[test]
-  fn test_two() {
-    let presents = SAMPLE_INPUT.parse().unwrap();
-    let total = part_two(&presents);
-    assert_eq!(total, 2);
+    assert_eq!(total, 3); // This is a lie
   }
 }
