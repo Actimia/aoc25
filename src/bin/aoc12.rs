@@ -18,7 +18,7 @@ enum Shape {
 impl Display for Shape {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      Shape::No => write!(f, " "),
+      Shape::No => write!(f, "."),
       Shape::Yes => write!(f, "#"),
     }
   }
@@ -74,16 +74,21 @@ impl FromStr for Presents {
   }
 }
 
+/*
 fn fits(grid: &Grid<Shape>, present: &Grid<Shape>, row: usize, col: usize) -> Option<Grid<Shape>> {
   let fits = present
     .cells()
     .filter(|(_, _, c)| matches!(c, Shape::Yes))
-    .all(|(x, y, _)| matches!(grid.get(row + x, col + y), Some(Shape::No)));
+    .all(|(r, c, _)| match grid.get(row + r, col + c) {
+      Some(Shape::Yes) => false,
+      Some(Shape::No) => true,
+      None => false,
+    });
 
   if fits {
     let mut new = grid.clone();
-    for (x, y, _) in present.cells().filter(|(_, _, c)| matches!(c, Shape::Yes)) {
-      new.set(row + x, col + y, Shape::Yes);
+    for (r, c, _) in present.cells().filter(|(_, _, c)| matches!(c, Shape::Yes)) {
+      new.set(row + r, col + c, Shape::Yes);
     }
     Some(new)
   } else {
@@ -110,15 +115,19 @@ fn can_fit_all(grid: Grid<Shape>, shapes: &[Grid<Shape>]) -> bool {
   }
 
   for shape in rotations(&shapes[0]) {
-    eprintln!("trying:\n{shape}\nin\n{grid}");
-    for (x, y, _) in grid.cells() {
-      eprintln!("trying at {x},{y}");
-      let new = fits(&grid, &shape, x, y);
+    /* eprintln!(
+      "trying:\n{shape}\nin\n{grid}\n{}x{}",
+      grid.rows(),
+      grid.cols()
+    ); */
+    for (row, col, _) in grid.cells() {
+      // eprintln!("trying at {row},{col}");
+      let new = fits(&grid, &shape, row, col);
       if new.is_none() {
         continue;
       }
       let new = new.unwrap();
-      eprintln!("fit at {x},{y}:\n{new}\n---");
+      // eprintln!("fit at {row},{col}:\n{new}\n---");
       if can_fit_all(new, &shapes[1..]) {
         return true;
       }
@@ -127,41 +136,48 @@ fn can_fit_all(grid: Grid<Shape>, shapes: &[Grid<Shape>]) -> bool {
   // eprintln!("failed\n{grid}");
   false
 }
+*/
 
 fn part_one(presents: &Presents) -> u64 {
-  //
+  // 495
 
   let mut works = 0;
-  for (x, y, counts) in &presents.areas {
-    let grid = Grid::new(*x, *y, Shape::No);
+  for (cols, rows, counts) in &presents.areas {
+    let max = *rows * *cols;
+    let best: usize = counts.iter().map(|x| x * 7).sum();
+    if best < max {
+      works += 1;
+    }
+    /*
 
-    let shapes: Vec<Grid<Shape>> = counts
+      let grid = Grid::new(*rows, *cols, Shape::No);
+
+      let shapes: Vec<Grid<Shape>> = counts
       .iter()
       .enumerate()
-      .flat_map(|(index, count)| vec![presents.presents[index].clone(); *count])
+      .flat_map(|(index, count)| repeat(presents.presents[index].clone()).take(*count))
       .collect();
-
-    eprintln!("{}", shapes.len());
 
     if can_fit_all(grid, shapes.as_slice()) {
       works += 1;
     }
+    */
   }
   works
 }
 
-fn part_two(_presents: Presents) -> u64 {
+fn part_two(presents: &Presents) -> u64 {
   //
-  0
+  part_one(&presents)
 }
 
 fn main() -> anyhow::Result<()> {
   println!("AoC Day 12: Christmas Tree Farm");
-  let (network, dur) = time_try(|| INPUT.parse())?;
+  let (presents, dur) = time_try(|| INPUT.parse())?;
   println!("Parsed input in {}", dur.display());
-  let (part_one, dur) = time(|| part_one(&network));
+  let (part_one, dur) = time(|| part_one(&presents));
   println!("Part 1: {part_one} (in {})", dur.display());
-  let (part_two, dur) = time(|| part_two(network));
+  let (part_two, dur) = time(|| part_two(&presents));
   println!("Part 2: {part_two} (in {})", dur.display());
   Ok(())
 }
@@ -174,15 +190,15 @@ mod tests {
 
   #[test]
   fn test_one() {
-    let points = SAMPLE_INPUT.parse().unwrap();
-    let total = part_one(&points);
+    let presents = SAMPLE_INPUT.parse().unwrap();
+    let total = part_one(&presents);
     assert_eq!(total, 2);
   }
 
   #[test]
   fn test_two() {
-    let machine = SAMPLE_INPUT.parse().unwrap();
-    let total = part_two(machine);
-    assert_eq!(total, 0);
+    let presents = SAMPLE_INPUT.parse().unwrap();
+    let total = part_two(&presents);
+    assert_eq!(total, 2);
   }
 }

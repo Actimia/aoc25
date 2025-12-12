@@ -219,7 +219,7 @@ impl<T> Grid<T> {
 
   pub fn cells(&self) -> impl Iterator<Item = (usize, usize, &T)> {
     self.data.iter().enumerate().map(|(i, data)| {
-      let (row, col) = i.div_rem_euclid(&self.rows());
+      let (row, col) = i.div_rem_euclid(&self.cols());
       (row, col, data)
     })
   }
@@ -415,6 +415,13 @@ mod tests {
       grid.col(3).copied().collect::<Vec<_>>(),
       vec!['4', '7', '0']
     );
+  }
+
+  #[test]
+  fn test_cells() {
+    let g: Grid<char> = Grid::from_str("...\n...").unwrap();
+    let coords: Vec<_> = g.cells().map(|(r, c, _)| (r, c)).collect();
+    assert_eq!(coords, vec![(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)])
   }
 
   #[test]
