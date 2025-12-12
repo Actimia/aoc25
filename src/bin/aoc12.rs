@@ -141,10 +141,24 @@ fn can_fit_all(grid: Grid<Shape>, shapes: &[Grid<Shape>]) -> bool {
 fn part_one(presents: &Presents) -> u64 {
   // 495
 
+  let shape_sizes: Vec<_> = presents
+    .presents
+    .iter()
+    .map(|shape| {
+      shape
+        .cells()
+        .filter(|(_, _, c)| matches!(c, Shape::Yes))
+        .count()
+    })
+    .collect();
   let mut works = 0;
   for (cols, rows, counts) in &presents.areas {
     let max = *rows * *cols;
-    let best: usize = counts.iter().map(|x| x * 7).sum();
+    let best: usize = counts
+      .iter()
+      .zip(shape_sizes.iter())
+      .map(|(count, size)| count * size)
+      .sum();
     if best < max {
       works += 1;
     }
