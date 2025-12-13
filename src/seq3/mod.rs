@@ -38,7 +38,10 @@ impl Sequence {
       Sequence::Pattern { pattern, index: _ } => {
         Some(pattern.iter().filter_map(|p| p.period()).sum())
       }
-      Sequence::Add { left, right } => left.period().zip(right.period()).map(|(l, r)| l.lcm(r)),
+      Sequence::Add { left, right } => left
+        .period()
+        .zip(right.period())
+        .map(|(l, r)| (l as u64).lcm(r as u64) as usize),
       Sequence::Random { min: _, max: _ } => None,
       Sequence::Mul {
         num: _,
