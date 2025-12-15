@@ -162,14 +162,13 @@ impl Ord for HeuristicCost {
   }
 }
 
-fn search_joltage(initial: Vec<u32>, machine: &Machine) -> usize {
+fn search_joltage(machine: &Machine) -> usize {
+  let initial = vec![0; machine.joltage.len()];
   let mut heap: BTreeSet<HeuristicCost> = BTreeSet::new();
   heap.insert(HeuristicCost::from(0, initial, &machine.joltage));
 
   // let max_step = machine.buttons.iter().map(|x| x.len()).max().unwrap();
   let mut min_steps = usize::MAX;
-
-  let mut cur_step = 0;
 
   while let Some(HeuristicCost(dist, current, steps)) = heap.pop_first() {
     if steps >= min_steps {
@@ -177,12 +176,6 @@ fn search_joltage(initial: Vec<u32>, machine: &Machine) -> usize {
       continue;
     }
 
-    if steps > cur_step {
-      cur_step = steps;
-      let s = heap.len();
-      heap.retain(|x| x.0 < 2 * dist);
-      eprintln!("step {} (-{}, {})", steps, s - heap.len(), heap.len());
-    }
     if dist == 0 {
       min_steps = steps.min(min_steps);
       /* eprintln!(
@@ -199,6 +192,48 @@ fn search_joltage(initial: Vec<u32>, machine: &Machine) -> usize {
       .map(|toggled| HeuristicCost::from(steps + 1, toggled, &machine.joltage))
     {
       heap.insert(next);
+    }
+  }
+  min_steps
+}
+*/
+/*
+fn decr(cur: &Vec<u32>, button: &Vec<u32>) -> Vec<u32> {
+  let mut next = cur.clone();
+  for i in button {
+    next[*i as usize] -= 1;
+  }
+  next
+}
+
+fn gcd(lhs: u32, rhs: u32) -> u32 {
+  // Euclid's algorithm: https://en.wikipedia.org/wiki/Euclidean_algorithm
+  let mut a = lhs;
+  let mut b = rhs;
+  while b != 0 {
+    (a, b) = (b, a % b);
+  }
+  a
+}
+
+fn search2(current: Vec<u32>, machine: &Machine) -> u64 {
+  if current.iter().all(|x| *x == 0) {
+    return 0;
+  }
+
+  let mut min_steps = u64::MAX;
+  for button in &machine.buttons {
+    let mut next = decr(&current, button);
+
+    let gcd = next.iter().copied().reduce(|a, b| gcd(a, b)).unwrap();
+    if gcd > 1 {
+      eprintln!("found gcd: {gcd}");
+    }
+    next.iter_mut().for_each(|xs| *xs /= gcd);
+    let steps = ((gcd as u64) * search2(next, machine)) + 1;
+
+    if steps < min_steps {
+      min_steps = steps;
     }
   }
   min_steps

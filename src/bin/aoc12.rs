@@ -151,6 +151,7 @@ fn part_one(presents: &Presents) -> u64 {
         .count()
     })
     .collect();
+
   let mut works = 0;
   for (cols, rows, counts) in &presents.areas {
     let max = *rows * *cols;
