@@ -1,6 +1,7 @@
 pub mod bloomfilter;
 pub mod events;
 pub mod exts;
+pub mod fuzzy;
 pub mod graph;
 pub mod graph_algo;
 pub mod grid;
