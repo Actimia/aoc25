@@ -12,7 +12,8 @@
 
 ### Algorithms
  - [x] Binomial coefficient
- - [ ] [K-means](https://en.wikipedia.org/wiki/K-means_clustering)
+ - [x] [Dice-Sorensen coefficient](https://en.wikipedia.org/wiki/Dice-S%C3%B8rensen_coefficient)
+ - [x] [K-means](https://en.wikipedia.org/wiki/K-means_clustering)
  - [ ] [Minimum spanning tree](https://en.wikipedia.org/wiki/Minimum_spanning_tree)
  - [ ] [Damerau-Levenshtein distance](https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance)
  - [ ] [Primality test](https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test)

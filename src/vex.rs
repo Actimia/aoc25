@@ -3,12 +3,28 @@ use std::{
   ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
 };
 
+use num_traits::Zero;
+
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Vex<T, const DIM: usize>(pub [T; DIM]);
 
 impl<T, const D: usize> Vex<T, D> {
   pub fn new(vals: impl Into<[T; D]>) -> Self {
     Vex(vals.into())
+  }
+
+  pub fn zero() -> Vex<T, D>
+  where
+    T: Zero + Copy,
+  {
+    Vex([T::zero(); D])
+  }
+
+  pub fn all(z: T) -> Vex<T, D>
+  where
+    T: Copy,
+  {
+    Vex([z; D])
   }
 }
 
