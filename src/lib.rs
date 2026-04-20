@@ -1,3 +1,4 @@
+pub mod avg;
 pub mod bloomfilter;
 pub mod events;
 pub mod exts;
@@ -6,6 +7,7 @@ pub mod graph;
 pub mod graph_algo;
 pub mod grid;
 pub mod kmeans;
+pub mod prime;
 pub mod seq;
 pub mod seq3;
 pub mod time;
