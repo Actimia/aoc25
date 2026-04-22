@@ -11,4 +11,5 @@ pub mod prime;
 pub mod seq;
 pub mod seq3;
 pub mod time;
+pub mod unionfind;
 pub mod vex;

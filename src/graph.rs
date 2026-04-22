@@ -1,30 +1,64 @@
 use std::collections::BTreeMap;
 
-/// Undirected graph where nodes are associated with values of N, and edges are associated with values of E.
-#[derive(Default, PartialEq, Eq, Clone)]
-pub struct Graph<V, E> {
+/// Graph where nodes are associated with values of N, and edges are associated with values of E.
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
+pub struct Graph<V, E, ET: Edge = Undirected> {
   nodes: BTreeMap<usize, V>,
-  edges: BTreeMap<Edge, E>,
+  edges: BTreeMap<ET, E>,
 }
 
-#[derive(PartialEq, PartialOrd, Ord, Eq, Clone)]
-pub struct Edge(usize, usize);
+pub trait Edge: Ord {
+  fn new(from: usize, to: usize) -> Self;
+  fn starts_at(&self, node: usize) -> bool;
+  fn ends_at(&self, node: usize) -> bool;
+  fn nodes(&self) -> (usize, usize);
+}
 
-impl Edge {
-  fn new(from: usize, to: usize) -> Edge {
+#[derive(PartialEq, PartialOrd, Ord, Eq, Clone, Debug)]
+pub struct Directed(usize, usize);
+
+impl Edge for Directed {
+  fn new(from: usize, to: usize) -> Self {
+    Self(from, to)
+  }
+
+  fn starts_at(&self, node: usize) -> bool {
+    self.0 == node
+  }
+  fn ends_at(&self, node: usize) -> bool {
+    self.1 == node
+  }
+  fn nodes(&self) -> (usize, usize) {
+    return (self.0, self.1);
+  }
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub struct Undirected(usize, usize);
+
+impl Edge for Undirected {
+  fn new(from: usize, to: usize) -> Self {
     if from <= to {
-      Edge(from, to)
+      Self(from, to)
     } else {
-      Edge(to, from)
+      Self(to, from)
     }
   }
 
-  fn touches(&self, node: usize) -> bool {
+  fn starts_at(&self, node: usize) -> bool {
     self.0 == node || self.1 == node
+  }
+
+  fn ends_at(&self, node: usize) -> bool {
+    self.0 == node || self.1 == node
+  }
+
+  fn nodes(&self) -> (usize, usize) {
+    return (self.0, self.1);
   }
 }
 
-impl<N, E> Graph<N, E> {
+impl<N, E, ET: Edge> Graph<N, E, ET> {
   pub fn new() -> Self {
     Graph {
       nodes: BTreeMap::default(),
@@ -40,7 +74,10 @@ impl<N, E> Graph<N, E> {
 
   pub fn remove_node(&mut self, index: usize) -> Option<N> {
     let data = self.nodes.remove(&index);
-    self.edges.retain(|edge, _| !edge.touches(index));
+    self.edges.retain(|edge, _| {
+      let (a, b) = edge.nodes();
+      !(a == index || b == index)
+    });
     data
   }
 
@@ -53,21 +90,22 @@ impl<N, E> Graph<N, E> {
     self
       .edges
       .iter()
-      .filter(move |(edge, _)| edge.touches(index))
+      .filter(move |(edge, _)| edge.starts_at(index))
       .map(move |(edge, value)| {
-        let Edge(from, to) = edge;
-        if *from == index {
-          (*to, value)
+        let (from, to) = edge.nodes();
+        if from == index {
+          (to, value)
         } else {
-          (*from, value)
+          (from, value)
         }
       })
   }
 
   pub fn get_edge(&self, from: usize, to: usize) -> Option<&E> {
-    self.edges.get(&Edge::new(from, to))
+    self.edges.get(&ET::new(from, to))
   }
 
+  /// Checks whether two nodes are neighbors (has an edge between them). For `Directed` graphs, this only checks in one direction.
   pub fn are_neighbors(&self, from: usize, to: usize) -> bool {
     self.get_edge(from, to).is_some()
   }
@@ -76,8 +114,8 @@ impl<N, E> Graph<N, E> {
     self.nodes.iter()
   }
 
-  pub fn edges(&self) -> impl Iterator<Item = ((&usize, &usize), &E)> {
-    self.edges.iter().map(|(edge, v)| ((&edge.0, &edge.1), v))
+  pub fn edges(&self) -> impl Iterator<Item = ((usize, usize), &E)> {
+    self.edges.iter().map(|(edge, v)| (edge.nodes(), v))
   }
 
   /// Takes a path of node indices, returning the edge values between them in order of traversal (if such edges exist)
@@ -89,7 +127,7 @@ impl<N, E> Graph<N, E> {
   }
 
   pub fn add_edge(&mut self, from: usize, to: usize, data: E) -> Option<E> {
-    let edge = Edge::new(from, to);
+    let edge = ET::new(from, to);
     self.edges.insert(edge, data)
   }
 
@@ -97,12 +135,12 @@ impl<N, E> Graph<N, E> {
     let src = self.get_node(from)?;
     let dst = self.get_node(to)?;
 
-    let edge = Edge::new(from, to);
+    let edge = ET::new(from, to);
     self.edges.insert(edge, edge_value(src, dst))
   }
 
   pub fn remove_edge(&mut self, from: usize, to: usize) -> Option<E> {
-    let edge = Edge::new(from, to);
+    let edge = ET::new(from, to);
     self.edges.remove(&edge)
   }
 
@@ -201,5 +239,27 @@ mod tests {
 
     assert_eq!(neighbors[0], (i1, &11));
     assert_eq!(neighbors[1], (i3, &12));
+  }
+
+  #[test]
+  fn test_neighbors_directed() {
+    let mut g: Graph<(), (), Directed> = Graph::new();
+    let i1 = g.add_node(());
+    let i2 = g.add_node(());
+    let i3 = g.add_node(());
+
+    g.add_edge(i1, i2, ());
+    g.add_edge(i1, i3, ());
+    g.add_edge(i3, i1, ());
+
+    let neighbors: Vec<_> = g.neighbors(i1).collect();
+
+    assert_eq!(neighbors.len(), 2);
+    assert_eq!(neighbors[0].0, i2);
+    assert_eq!(neighbors[1].0, i3);
+
+    let neighbors: Vec<_> = g.neighbors(i3).collect();
+    assert_eq!(neighbors.len(), 1);
+    assert_eq!(neighbors[0].0, i1);
   }
 }

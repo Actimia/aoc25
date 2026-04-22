@@ -82,7 +82,7 @@ fn part_one(graph: &Graph<I64Vec3, u64>, count: usize) -> usize {
   edges.sort_by(|(_, a), (_, b)| a.cmp(b));
 
   for ((from, to), _) in edges {
-    connections.add_edge(*from, *to, ());
+    connections.add_edge(from, to, ());
 
     let num_edges = connections.num_edges();
     if num_edges == count {
@@ -106,18 +106,18 @@ fn part_two(graph: &Graph<I64Vec3, u64>) -> u64 {
   let mut connected = 0;
 
   for ((from, to), _dist) in edges {
-    if !visited[*from] {
+    if !visited[from] {
       connected += 1;
-      visited[*from] = true;
+      visited[from] = true;
     }
-    if !visited[*to] {
+    if !visited[to] {
       connected += 1;
-      visited[*to] = true;
+      visited[to] = true;
     }
 
     if connected >= target_count {
-      let from = graph.get_node(*from).unwrap();
-      let to = graph.get_node(*to).unwrap();
+      let from = graph.get_node(from).unwrap();
+      let to = graph.get_node(to).unwrap();
 
       return (from.x * to.x) as u64;
     }
