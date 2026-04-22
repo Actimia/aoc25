@@ -157,7 +157,7 @@ mod tests {
     let _ = uf.join(0, 1);
     let _ = uf.join(1, 2);
     let neighbors: BTreeSet<_> = uf.neighbors(0).collect();
-    assert_eq!(neighbors, BTreeSet::from_iter([0, 1, 2].iter()))
+    assert_eq!(neighbors, BTreeSet::from_iter([0, 1, 2].iter()));
   }
 
   #[test]
@@ -166,8 +166,8 @@ mod tests {
     let _ = uf.join(0, 1);
     let _ = uf.join(1, 2);
     let _ = uf.join(3, 4);
-    let sets = uf.components();
-    assert_eq!(sets[0], vec![0, 1, 2]);
-    assert_eq!(sets[1], vec![3, 4]);
+    let sets = BTreeSet::from_iter(uf.components());
+
+    assert_eq!(sets, BTreeSet::from_iter([vec![0, 1, 2], vec![3, 4]]));
   }
 }
