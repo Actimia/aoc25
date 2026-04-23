@@ -62,8 +62,8 @@ fn parse(input: &str) -> anyhow::Result<Vec<Machine>> {
   Ok(problems)
 }
 
-fn toggle(current: &Vec<bool>, button: &Vec<u32>) -> Vec<bool> {
-  let mut new = current.clone();
+fn toggle(current: &[bool], button: &Vec<u32>) -> Vec<bool> {
+  let mut new = current.to_owned();
   for x in button {
     new[*x as usize] ^= true;
   }
@@ -90,13 +90,12 @@ fn search_buttons(initial: Vec<bool>, machine: &Machine) -> usize {
   0
 }
 
-fn part_one(machines: &Vec<Machine>) -> usize {
+fn part_one(machines: &[Machine]) -> usize {
   // 399
   let mut total = 0;
-  for (_idx, machine) in machines.iter().enumerate() {
+  for machine in machines {
     let initial = vec![false; machine.target.len()];
     let steps = search_buttons(initial, machine);
-    // eprintln!("machine {_idx} took {steps} steps");
     total += steps;
   }
   total

@@ -1,14 +1,4 @@
-use crate::vex::Vex;
-
-#[derive(PartialEq, PartialOrd)]
-struct OrdF64(f64);
-
-impl Eq for OrdF64 {}
-impl Ord for OrdF64 {
-  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.0.total_cmp(&other.0)
-  }
-}
+use crate::{exts::numbers::F64Ext, vex::Vex};
 
 fn centroid<const N: usize>(points: &Vec<Vex<f64, N>>) -> Vex<f64, N> {
   let mut sum = Vex::zero();
@@ -29,7 +19,7 @@ pub fn kmeans<const N: usize>(items: impl AsRef<[Vex<f64, N>]>, k: usize) -> Vec
       if let Some((idx, _)) = centroids
         .iter()
         .enumerate()
-        .min_by_key(|(_, centroid)| OrdF64((**centroid - *p).length()))
+        .min_by_key(|(_, centroid)| (**centroid - *p).length().comparable())
       {
         clusters[idx].push(*p)
       }

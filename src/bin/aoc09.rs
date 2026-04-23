@@ -109,7 +109,7 @@ fn in_polygon(grid: &Grid<Tile>, x1: i64, y1: i64, x2: i64, y2: i64) -> bool {
         return false;
       }
     }
-    return true;
+    true
   } else if y1 == y2 {
     let y = y1;
     for x in x1.min(x2)..x1.max(x2) {
@@ -117,7 +117,7 @@ fn in_polygon(grid: &Grid<Tile>, x1: i64, y1: i64, x2: i64, y2: i64) -> bool {
         return false;
       }
     }
-    return true;
+    true
   } else {
     unreachable!()
   }
@@ -130,7 +130,7 @@ struct Compressed {
 }
 
 impl Compressed {
-  fn compress(original: &Vec<I64Vec2>) -> Self {
+  fn compress(original: &[I64Vec2]) -> Self {
     let (mut xs, mut ys): (Vec<i64>, Vec<i64>) = original.iter().map(|v| (v.x, v.y)).collect();
     xs.sort();
     ys.sort();
@@ -155,7 +155,7 @@ impl Compressed {
   }
 }
 
-fn part_two(points: &Vec<I64Vec2>) -> u64 {
+fn part_two(points: &[I64Vec2]) -> u64 {
   // 1542119040
   let compressed = Compressed::compress(points);
 
@@ -166,7 +166,7 @@ fn part_two(points: &Vec<I64Vec2>) -> u64 {
   );
 
   for (a, b) in compressed.points.iter().circular_tuple_windows() {
-    add_line(&mut grid, &a, &b);
+    add_line(&mut grid, a, b);
   }
 
   flood_fill(&mut grid);

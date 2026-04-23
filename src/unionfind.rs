@@ -40,6 +40,10 @@ impl<T> UnionFind<T> {
     self.entries.len()
   }
 
+  pub fn is_empty(&self) -> bool {
+    self.len() == 0
+  }
+
   pub fn sets(&self) -> usize {
     self.sets
   }

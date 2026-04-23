@@ -21,11 +21,7 @@ impl FromStr for Network {
     for l in s.lines() {
       let (host, outputs) = l.split_once(':').ok_or(anyhow::anyhow!("expected :"))?;
 
-      let outputs: Vec<_> = outputs
-        .trim()
-        .split_whitespace()
-        .map(str::to_owned)
-        .collect();
+      let outputs: Vec<_> = outputs.split_whitespace().map(str::to_owned).collect();
 
       let host = host.trim().to_owned();
       map.insert(host, outputs);

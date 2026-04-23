@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 pub trait UnsignedExt {
   fn ratio(self, denominator: Self) -> f64;
 
@@ -45,6 +47,37 @@ impl UnsignedExt for u64 {
 
   fn lcm(self, rhs: Self) -> Self {
     self * (rhs / self.gcd(rhs))
+  }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ComparableF64(pub f64);
+
+impl PartialEq for ComparableF64 {
+  fn eq(&self, other: &Self) -> bool {
+    self.0.total_cmp(&other.0) == Ordering::Equal
+  }
+}
+impl Eq for ComparableF64 {}
+
+impl PartialOrd for ComparableF64 {
+  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    Some(self.cmp(other))
+  }
+}
+impl Ord for ComparableF64 {
+  fn cmp(&self, other: &Self) -> Ordering {
+    self.0.total_cmp(&other.0)
+  }
+}
+
+pub trait F64Ext {
+  fn comparable(self) -> ComparableF64;
+}
+
+impl F64Ext for f64 {
+  fn comparable(self) -> ComparableF64 {
+    ComparableF64(self)
   }
 }
 

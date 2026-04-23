@@ -78,7 +78,7 @@ impl TryFrom<&str> for ProblemsOne {
 
     let problems = operators
       .into_iter()
-      .zip(numbers.into_iter())
+      .zip(numbers)
       .map(|(operator, numbers)| Problem { numbers, operator })
       .collect();
 

@@ -1,38 +1,23 @@
 use std::collections::BTreeSet;
 
+use crate::exts::numbers::F64Ext;
+
 type Bigrams<'a> = BTreeSet<&'a [u8; 2]>;
 
-pub fn dice_sorensen_str(a: &str, b: &str) -> Score {
+pub fn dice_sorensen_str(a: &str, b: &str) -> f64 {
   let a: Bigrams = a.as_bytes().array_windows::<2>().collect();
   let b: Bigrams = b.as_bytes().array_windows::<2>().collect();
   dice_sorensen(&a, &b)
 }
 
-pub fn dice_sorensen<T: Ord>(a: &BTreeSet<&'_ T>, b: &BTreeSet<&'_ T>) -> Score {
+pub fn dice_sorensen<T: Ord>(a: &BTreeSet<&'_ T>, b: &BTreeSet<&'_ T>) -> f64 {
   let den = a.len() + b.len();
   if den == 0 {
     // Two empty sets are equal
-    return Score(1.0);
+    return 1.0;
   }
   let num = 2 * a.intersection(b).count();
-  Score(num as f64 / den as f64)
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Score(f64);
-
-impl Eq for Score {}
-
-impl PartialOrd for Score {
-  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    Some(self.0.total_cmp(&other.0))
-  }
-}
-
-impl Ord for Score {
-  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.partial_cmp(other).expect("cant fail")
-  }
+  num as f64 / den as f64
 }
 
 pub fn dice_sorensen_search<'a, 'b>(
@@ -45,12 +30,12 @@ pub fn dice_sorensen_search<'a, 'b>(
     .iter()
     .max_by_key(|cand| {
       let cand: Bigrams = cand.as_bytes().array_windows::<2>().collect();
-      dice_sorensen(&cand, &needle)
+      dice_sorensen(&cand, &needle).comparable()
     })
     .map(|best| {
       let best_bigrams: Bigrams = best.as_bytes().array_windows::<2>().collect();
       let score = dice_sorensen(&best_bigrams, &needle);
-      (*best, score.0)
+      (*best, score)
     })
 }
 
@@ -66,28 +51,28 @@ mod test {
 
   #[test]
   fn test_equal() {
-    assert_eq!(dice_sorensen_str("identical", "identical"), Score(1.0));
+    assert_eq!(dice_sorensen_str("identical", "identical"), 1.0);
   }
 
   #[test]
   fn test_empty() {
-    assert_eq!(dice_sorensen_str("empty", ""), Score(0.0));
-    assert_eq!(dice_sorensen_str("", ""), Score(1.0));
+    assert_eq!(dice_sorensen_str("empty", ""), 0.0);
+    assert_eq!(dice_sorensen_str("", ""), 1.0);
   }
 
   #[test]
   fn test_similar() {
-    assert_eq!(dice_sorensen_str("identical", "identics"), Score(0.8));
+    assert_eq!(dice_sorensen_str("identical", "identics"), 0.8);
   }
 
   #[test]
   fn test_distinct() {
-    assert_eq!(dice_sorensen_str("identical", "disjunct"), Score(0.0));
+    assert_eq!(dice_sorensen_str("identical", "disjunct"), 0.0);
   }
 
   #[test]
   fn test_repeating() {
-    assert_eq!(dice_sorensen_str("abab", "abababab"), Score(1.0));
+    assert_eq!(dice_sorensen_str("abab", "abababab"), 1.0);
   }
 
   #[test]

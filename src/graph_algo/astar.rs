@@ -1,26 +1,12 @@
 use std::collections::BTreeSet;
 
-use crate::graph::Graph;
+use crate::{
+  exts::numbers::{ComparableF64, F64Ext},
+  graph::Graph,
+};
 
-struct HeuristicCost(f64, usize);
-
-impl PartialEq for HeuristicCost {
-  fn eq(&self, other: &Self) -> bool {
-    self.0 == other.0
-  }
-}
-impl Eq for HeuristicCost {}
-impl PartialOrd for HeuristicCost {
-  #[expect(clippy::non_canonical_partial_ord_impl)]
-  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    Some(self.0.total_cmp(&other.0))
-  }
-}
-impl Ord for HeuristicCost {
-  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.0.total_cmp(&other.0)
-  }
-}
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+struct HeuristicCost(ComparableF64, usize);
 
 impl<V, E> Graph<V, E> {
   /// Implementation of A* search, ideal for finding a path in planar graphs.
@@ -37,7 +23,7 @@ impl<V, E> Graph<V, E> {
     let mut visited: Vec<Option<usize>> = vec![None; self.num_nodes()];
 
     let mut heap: BTreeSet<HeuristicCost> = BTreeSet::new();
-    heap.insert(HeuristicCost(0.0, from));
+    heap.insert(HeuristicCost(0.0.comparable(), from));
 
     while !heap.is_empty() {
       let HeuristicCost(_, node) = heap.pop_first().expect("is not empty");
@@ -68,7 +54,7 @@ impl<V, E> Graph<V, E> {
         }
 
         visited[next_node] = Some(node);
-        heap.insert(HeuristicCost(eval, next_node));
+        heap.insert(HeuristicCost(eval.comparable(), next_node));
       }
     }
     None
