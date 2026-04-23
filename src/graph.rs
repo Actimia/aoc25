@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use crate::unionfind::UnionFind;
+
 /// Graph where nodes are associated with values of N, and edges are associated with values of E.
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Graph<V, E, ET: Edge = Undirected> {
@@ -33,7 +35,7 @@ impl Edge for Directed {
   }
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
 pub struct Undirected(usize, usize);
 
 impl Edge for Undirected {
@@ -105,6 +107,10 @@ impl<N, E, ET: Edge> Graph<N, E, ET> {
     self.edges.get(&ET::new(from, to))
   }
 
+  pub fn clear_edges(&mut self) {
+    self.edges.clear();
+  }
+
   /// Checks whether two nodes are neighbors (has an edge between them). For `Directed` graphs, this only checks in one direction.
   pub fn are_neighbors(&self, from: usize, to: usize) -> bool {
     self.get_edge(from, to).is_some()
@@ -150,6 +156,46 @@ impl<N, E, ET: Edge> Graph<N, E, ET> {
 
   pub fn num_edges(&self) -> usize {
     self.edges.len()
+  }
+}
+
+impl<V, E> Graph<V, E, Undirected> {
+  /// Constructs a minimum spanning tree for a given graph, with each edge weight value mapped to a weight function.
+  pub fn minimum_spanning_tree_by<'g, T>(
+    &'g self,
+    mut extractor: impl FnMut(&'g E) -> T,
+  ) -> Graph<V, E, Undirected>
+  where
+    V: Clone,
+    E: Clone,
+    T: Ord,
+  {
+    let edges = {
+      let mut edges: Vec<_> = self.edges().collect();
+      edges.sort_by_key(|(_, e)| extractor(e));
+      edges
+    };
+
+    let mut mst: Graph<V, E> = self.clone();
+    mst.clear_edges();
+
+    let mut uf = UnionFind::new(self.nodes().map(|(_, n)| n));
+
+    for ((a, b), data) in edges {
+      if let Ok(_) = uf.join(a, b) {
+        mst.add_edge(a, b, data.clone());
+      }
+    }
+    mst
+  }
+
+  /// Constructs a minimum spanning tree for a given graph, with edge weights given by the ordering of its edge values.
+  pub fn minimum_spanning_tree(&self) -> Self
+  where
+    V: Clone,
+    E: Clone + Ord,
+  {
+    self.minimum_spanning_tree_by(|e| e)
   }
 }
 
@@ -261,5 +307,22 @@ mod tests {
     let neighbors: Vec<_> = g.neighbors(i3).collect();
     assert_eq!(neighbors.len(), 1);
     assert_eq!(neighbors[0].0, i1);
+  }
+
+  #[test]
+  fn test_mst() {
+    let mut g: Graph<(), u32, Undirected> = Graph::new();
+    let i1 = g.add_node(());
+    let i2 = g.add_node(());
+    let i3 = g.add_node(());
+
+    g.add_edge(i1, i2, 1);
+    g.add_edge(i2, i3, 4);
+    g.add_edge(i3, i1, 2);
+
+    let mst = g.minimum_spanning_tree();
+    assert_eq!(mst.get_edge(i1, i2), Some(&1));
+    assert_eq!(mst.get_edge(i2, i3), None);
+    assert_eq!(mst.get_edge(i1, i3), Some(&2))
   }
 }
