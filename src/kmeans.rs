@@ -20,7 +20,7 @@ fn centroid<const N: usize>(points: &Vec<Vex<f64, N>>) -> Vex<f64, N> {
 
 pub fn kmeans<const N: usize>(items: impl AsRef<[Vex<f64, N>]>, k: usize) -> Vec<Vec<Vex<f64, N>>> {
   let items = items.as_ref();
-  let mut centroids: Vec<Vex<f64, N>> = items[..k].iter().cloned().collect();
+  let mut centroids: Vec<Vex<f64, N>> = items[..k].to_vec();
 
   loop {
     let mut clusters: Vec<Vec<Vex<f64, N>>> = vec![vec![]; k];
@@ -31,7 +31,7 @@ pub fn kmeans<const N: usize>(items: impl AsRef<[Vex<f64, N>]>, k: usize) -> Vec
         .enumerate()
         .min_by_key(|(_, centroid)| OrdF64((**centroid - *p).length()))
       {
-        clusters[idx].push(p.clone())
+        clusters[idx].push(*p)
       }
     }
 

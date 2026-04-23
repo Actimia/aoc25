@@ -31,7 +31,7 @@ impl Edge for Directed {
     self.1 == node
   }
   fn nodes(&self) -> (usize, usize) {
-    return (self.0, self.1);
+    (self.0, self.1)
   }
 }
 
@@ -56,7 +56,7 @@ impl Edge for Undirected {
   }
 
   fn nodes(&self) -> (usize, usize) {
-    return (self.0, self.1);
+    (self.0, self.1)
   }
 }
 
@@ -182,7 +182,7 @@ impl<V, E> Graph<V, E, Undirected> {
     let mut uf = UnionFind::new(self.nodes().map(|(_, n)| n));
 
     for ((a, b), data) in edges {
-      if let Ok(_) = uf.join(a, b) {
+      if uf.join(a, b).is_ok() {
         mst.add_edge(a, b, data.clone());
       }
     }

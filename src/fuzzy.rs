@@ -14,18 +14,24 @@ pub fn dice_sorensen<T: Ord>(a: &BTreeSet<&'_ T>, b: &BTreeSet<&'_ T>) -> Score 
     // Two empty sets are equal
     return Score(1.0);
   }
-  let num = 2 * a.intersection(&b).count();
+  let num = 2 * a.intersection(b).count();
   Score(num as f64 / den as f64)
 }
 
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq)]
 pub struct Score(f64);
 
 impl Eq for Score {}
 
+impl PartialOrd for Score {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    Some(self.0.total_cmp(&other.0))
+  }
+}
+
 impl Ord for Score {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.0.total_cmp(&other.0)
+    self.partial_cmp(other).expect("cant fail")
   }
 }
 

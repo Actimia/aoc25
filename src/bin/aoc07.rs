@@ -1,4 +1,4 @@
-use std::mem;
+use std::{mem, str::FromStr};
 
 use anyhow::bail;
 use aoc25::{

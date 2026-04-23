@@ -4,6 +4,7 @@ use aoc25::{
   grid::Grid,
   time::{time, time_try},
 };
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("data/04.txt");
 
@@ -88,6 +89,7 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
+
   use super::*;
 
   const SAMPLE_INPUT: &str = "..@@.@@@@.\n@@@.@.@.@@\n@@@@@.@.@@\n@.@@@@..@.\n@@.@@@@.@@\n.@@@@@@@.@\n.@.@.@.@@@\n@.@@@.@@@@\n.@@@@@@@@.\n@.@.@@@.@.";

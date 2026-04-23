@@ -1,6 +1,7 @@
 use std::{
   fmt::{Debug, Display},
   ops::{Index, IndexMut},
+  str::FromStr,
 };
 
 use anyhow::ensure;
@@ -63,20 +64,6 @@ impl<T> Grid<T> {
     );
 
     Self::from_data(data.into_iter().flatten(), cols)
-  }
-
-  /// Constructs a grid from text, where each row of the text becomes a row of the grid,
-  /// and each character is mapped to `T`.
-  pub fn from_str(text: impl AsRef<str>) -> anyhow::Result<Self>
-  where
-    T: TryFrom<char>,
-  {
-    let data = text
-      .as_ref()
-      .lines()
-      .map(|l| l.chars().flat_map(|c| c.try_into()).collect())
-      .collect();
-    Self::from_rows(data)
   }
 
   #[inline]
@@ -237,8 +224,7 @@ impl<T> Grid<T> {
     T: Clone,
   {
     let data: Vec<T> = (0..self.cols())
-      .map(|c| self.col(c).cloned())
-      .flatten()
+      .flat_map(|c| self.col(c).cloned())
       .collect();
 
     Grid::from_data(data, self.rows()).unwrap()
@@ -268,6 +254,20 @@ impl<T> Grid<T> {
       .collect();
 
     Grid::from_data(data, self.rows()).unwrap()
+  }
+}
+
+impl<T: TryFrom<char>> FromStr for Grid<T> {
+  type Err = anyhow::Error;
+
+  /// Constructs a grid from text, where each row of the text becomes a row of the grid,
+  /// and each character is mapped to `T`.
+  fn from_str(text: &str) -> anyhow::Result<Self> {
+    let data = text
+      .lines()
+      .map(|l| l.chars().flat_map(|c| c.try_into()).collect())
+      .collect();
+    Self::from_rows(data)
   }
 }
 
