@@ -7,6 +7,7 @@ pub mod graph;
 pub mod graph_algo;
 pub mod grid;
 pub mod kmeans;
+pub mod lcs;
 pub mod prime;
 pub mod seq;
 pub mod seq3;
