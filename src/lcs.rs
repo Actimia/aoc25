@@ -1,48 +1,4 @@
 use std::fmt::Debug;
-use std::mem::swap;
-
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub struct Lcs {
-  pos: usize,
-  len: Option<usize>,
-}
-const ZERO: Lcs = Lcs { pos: 0, len: None };
-
-pub fn longest_common_subsequence<'a, T: Eq>(left: &'a [T], right: &'a [T]) -> &'a [T] {
-  let (long, short) = long_short(left, right);
-
-  let mut cache = [vec![ZERO; short.len()], vec![ZERO; short.len()]];
-  let [prev, cur] = cache.get_disjoint_mut([0, 1]).unwrap();
-
-  fn get(xs: &[Lcs], i: isize) -> Lcs {
-    if i < 0 { ZERO } else { xs[i as usize] }
-  }
-
-  for y in long {
-    swap(cur, prev); // we swap the references only
-
-    for (i, x) in short.iter().enumerate() {
-      cur[i] = if x == y {
-        let upleft = get(prev, i as isize - 1);
-        Lcs {
-          len: Some(upleft.len.unwrap_or(0) + 1),
-          pos: upleft.pos,
-        }
-      } else {
-        let left = get(cur, i as isize - 1);
-        let up = get(prev, i as isize);
-        if left.len >= up.len {
-          left.clone()
-        } else {
-          up.clone()
-        }
-      };
-    }
-  }
-
-  let res = cur.last().unwrap();
-  &short[res.pos..(res.pos + res.len.unwrap_or(0))]
-}
 
 fn long_short<'a, T>(left: &'a [T], right: &'a [T]) -> (&'a [T], &'a [T]) {
   if left.len() >= right.len() {
@@ -52,7 +8,10 @@ fn long_short<'a, T>(left: &'a [T], right: &'a [T]) -> (&'a [T], &'a [T]) {
   }
 }
 
-/// Computes all the longest common substrings of two slices. O(m*n), where m and n are the lengths of the two slices.
+/// Computes all the longest common substrings of two slices.
+/// The order of the substrings returned is not specified.
+///
+/// Complexity: O(left.len() * right.len())
 pub fn longest_common_substrings<'a, T: Eq + Debug>(left: &'a [T], right: &'a [T]) -> Vec<&'a [T]> {
   let (long, short) = long_short(left, right);
 
@@ -86,23 +45,26 @@ pub fn longest_common_substrings<'a, T: Eq + Debug>(left: &'a [T], right: &'a [T
 
 /// Finds the longest common substrings of two `str`s, in an UTF8-aware manner.
 /// The length of the substrings are determined by their length in `char`s.
-/// O(m*n), where m and n are the lengths of the strings.
+/// The order of the substrings returned is not specified.
+///
+/// Complexity: O(left.len() * right.len())
 pub fn longest_common_substrings_str<'a>(left: &'a str, right: &'a str) -> Vec<&'a str> {
+  let rchars: Vec<_> = right.char_indices().collect();
+
   let mut maxlen_chars = 0;
   let mut maxlen_bytes = 0;
+  let mut suffix_cache = vec![(0, 0); rchars.len()];
   let mut result = Vec::default();
 
-  let rchars: Vec<_> = right.char_indices().collect();
-  let mut suffix = vec![(0, 0); rchars.len()];
-
-  for l in left.chars() {
-    for (index_chars, (index_bytes, r)) in rchars.iter().enumerate().rev() {
-      suffix[index_chars] = if *r == l {
-        let len = r.len_utf8(); // byte length of char
-        let (len_chars, len_bytes) = if index_chars == 0 {
+  for left_char in left.chars() {
+    // By iterating backwards here, we only need a single cache line
+    for (cache_index, (index_bytes, right_char)) in rchars.iter().enumerate().rev() {
+      suffix_cache[cache_index] = if *right_char == left_char {
+        let len = right_char.len_utf8(); // byte length of char
+        let (len_chars, len_bytes) = if cache_index == 0 {
           (1, len)
         } else {
-          let (lc, lb) = suffix[index_chars - 1];
+          let (lc, lb) = suffix_cache[cache_index - 1];
           (lc + 1, lb + len)
         };
         if len_chars > maxlen_chars {
@@ -120,7 +82,6 @@ pub fn longest_common_substrings_str<'a>(left: &'a str, right: &'a str) -> Vec<&
     }
   }
 
-  dbg!((&result, maxlen_bytes, maxlen_chars));
   result
     .into_iter()
     .map(|last| {
@@ -136,18 +97,16 @@ mod tests {
   use super::*;
 
   #[test]
-  fn subsequence_works() {
-    let lcs = longest_common_subsequence(b"gac", b"agcat");
-    assert_eq!(lcs, b"ga")
-  }
-
-  #[test]
-  fn substring_works() {
+  fn substring() {
     assert_eq!(longest_common_substrings(b"abcd", b"bcde"), &[b"bcd"]);
     assert_eq!(longest_common_substrings(b"abcd", b"abce"), &[b"abc"]);
     assert_eq!(
       longest_common_substrings(b"abcd", b"abceabc"),
       &[b"abc", b"abc"]
+    );
+    assert_eq!(
+      longest_common_substrings(b"a", b"aaa"),
+      longest_common_substrings(b"aaa", b"a"),
     );
     assert_eq!(longest_common_substrings(b"dabcd", b"eabce"), &[b"abc"]);
     assert_eq!(longest_common_substrings(b"test", b"fail"), &[] as &[&[u8]]);
@@ -155,8 +114,8 @@ mod tests {
   }
 
   #[test]
-  fn substring_str_works() {
-    /*assert_eq!(longest_common_substrings_str("abcd", "bcde"), vec!["bcd"]);
+  fn substring_str() {
+    assert_eq!(longest_common_substrings_str("abcd", "bcde"), vec!["bcd"]);
     assert_eq!(longest_common_substrings_str("abcd", "abce"), vec!["abc"]);
     assert_eq!(
       longest_common_substrings_str("abcd", "abceabc"),
@@ -168,13 +127,17 @@ mod tests {
       vec![] as Vec<&str>
     );
     assert_eq!(
+      longest_common_substrings_str("a", "aaa"),
+      longest_common_substrings_str("aaa", "a"),
+    );
+    assert_eq!(
       longest_common_substrings_str("banana", "ananas"),
       vec!["anana"]
     );
     assert_eq!(
       longest_common_substrings_str("i am 👨", "i am 👩"),
       vec!["i am "]
-    ); */
+    );
     assert_eq!(
       longest_common_substrings_str("a💙💙a💖💖a", "b💖💖b💙💙b"),
       vec!["💙💙", "💖💖",]
