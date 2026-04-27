@@ -62,6 +62,12 @@ impl<T> FromIterator<(usize, T)> for PriorityQueue<T> {
   }
 }
 
+impl<T> Default for PriorityQueue<T> {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 pub struct PriorityQueueIterator<T> {
   heap: PriorityQueue<T>,
 }

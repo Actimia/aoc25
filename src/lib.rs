@@ -12,6 +12,7 @@ pub mod prime;
 pub mod priority;
 pub mod seq;
 pub mod seq3;
+pub mod strings;
 pub mod time;
 pub mod unionfind;
 pub mod vex;
