@@ -9,6 +9,7 @@ pub mod grid;
 pub mod kmeans;
 pub mod lcs;
 pub mod prime;
+pub mod priority;
 pub mod seq;
 pub mod seq3;
 pub mod time;
