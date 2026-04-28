@@ -10,10 +10,10 @@ pub enum UTF8Error {
 /// Validates and decodes utf-8 encoded bytes.
 pub fn decode_utf8(bytes: &[u8]) -> Result<Vec<char>, UTF8Error> {
   #[inline]
-  fn get_continuation<'a, A: Iterator<Item = &'a u8>>(iter: &mut A) -> Result<u8, UTF8Error> {
+  fn get_continuation<'a, A: Iterator<Item = &'a u8>>(iter: &mut A) -> Result<u32, UTF8Error> {
     match *iter.next().ok_or(UTF8Error::UnexpectedEOF)? {
       // 0b10xxxxxx
-      b @ 0x80..0xC0 => Ok(b & 0b00111111),
+      b @ 0x80..0xC0 => Ok((b & 0b00111111) as u32),
       err => Err(UTF8Error::ExpectedContinuation(err)),
     }
   }
@@ -27,22 +27,22 @@ pub fn decode_utf8(bytes: &[u8]) -> Result<Vec<char>, UTF8Error> {
       a @ 0xC0..0xE0 => {
         // 0b110xxxxx
         let a = (a & 0b00011111) as u32;
-        let b = get_continuation(&mut iter)? as u32;
+        let b = get_continuation(&mut iter)?;
         (a << 6 | b, 0x80)
       }
       a @ 0xE0..0xF0 => {
         // 0b1110xxxx
         let a = (a & 0b00001111) as u32;
-        let b = get_continuation(&mut iter)? as u32;
-        let c = get_continuation(&mut iter)? as u32;
+        let b = get_continuation(&mut iter)?;
+        let c = get_continuation(&mut iter)?;
         (a << 12 | b << 6 | c, 0x800)
       }
       a @ 0xF0..0xF8 => {
         // 0b11110xxx
         let a = (a & 0b00000111) as u32;
-        let b = get_continuation(&mut iter)? as u32;
-        let c = get_continuation(&mut iter)? as u32;
-        let d = get_continuation(&mut iter)? as u32;
+        let b = get_continuation(&mut iter)?;
+        let c = get_continuation(&mut iter)?;
+        let d = get_continuation(&mut iter)?;
         (a << 18 | b << 12 | c << 6 | d, 0x10000)
       }
       err => return Err(UTF8Error::InvalidByte(err)),
