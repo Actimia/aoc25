@@ -1,0 +1,58 @@
+pub enum Result {
+  White,
+  Tie,
+  Black,
+}
+
+pub fn elo(white: f64, black: f64, result: Result) -> (f64, f64) {
+  const K: f64 = 32.;
+
+  let (result_white, result_black) = match result {
+    Result::White => (1.0, 0.0),
+    Result::Tie => (0.5, 0.5),
+    Result::Black => (0.0, 1.0),
+  };
+  let (expected_white, expected_black) = expected_win(white, black);
+
+  let white_delta = K * (result_white - expected_white);
+  let black_delta = K * (result_black - expected_black);
+
+  (white_delta, black_delta)
+}
+
+pub fn expected_win(white: f64, black: f64) -> (f64, f64) {
+  let q_white = 10.0f64.powf(white as f64 / 400.0);
+  let q_black = 10.0f64.powf(black as f64 / 400.0);
+  let q_sum = q_white + q_black;
+  (q_white / q_sum, q_black / q_sum)
+}
+
+#[cfg(test)]
+pub mod tests {
+  use super::*;
+
+  #[test]
+  fn test_expected_win() {
+    assert_eq!(expected_win(1500.0, 1500.0), (0.5, 0.5));
+  }
+
+  #[test]
+  fn test_elo() {
+    assert_eq!(elo(1500.0, 1500.0, Result::White), (16.0, -16.0));
+    assert_eq!(elo(1500.0, 1500.0, Result::Tie), (0.0, 0.0));
+    assert_eq!(elo(1500.0, 1500.0, Result::Black), (-16.0, 16.0));
+
+    assert_eq!(
+      elo(2400.0, 2700.0, Result::White),
+      (27.168654169237655, -27.168654169237655)
+    );
+    assert_eq!(
+      elo(2400.0, 2700.0, Result::Tie),
+      (11.168654169237655, -11.168654169237655)
+    );
+    assert_eq!(
+      elo(2400.0, 2700.0, Result::Black),
+      (-4.831345830762346, 4.831345830762345)
+    );
+  }
+}

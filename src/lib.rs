@@ -1,5 +1,6 @@
 pub mod avg;
 pub mod bloomfilter;
+pub mod elo;
 pub mod events;
 pub mod exts;
 pub mod fuzzy;
