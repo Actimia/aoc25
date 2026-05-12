@@ -190,8 +190,8 @@ impl Hand {
       .or_else(|| self.is_two_pair())
       .or_else(|| self.is_pair())
       .unwrap_or_else(|| {
-        let last = self.cards.last().unwrap().clone();
-        Score::HighCard { high: last }
+        let high = *self.cards.last().unwrap();
+        Score::HighCard { high }
       })
   }
 
@@ -235,7 +235,7 @@ impl Hand {
       res
     };
 
-    if let Some(highest) = counts
+    let highest = counts
       .iter()
       .enumerate()
       .rev()
@@ -243,18 +243,13 @@ impl Hand {
       .filter(|((_, c1), (_, c2), (_, c3), (_, c4), (_, c5))| {
         **c1 != 0 && **c2 != 0 && **c3 != 0 && **c4 != 0 && **c5 != 0
       })
-      .max_by_key(|((i, _), _, _, _, _)| *i)
-    {
-      let high = self
-        .cards
-        .iter()
-        .find(|c| c.rank as u8 == highest.0.0 as u8 + 2)
-        .unwrap()
-        .clone();
-      return Some(Score::Straight { high });
-    }
-
-    return None;
+      .max_by_key(|((i, _), _, _, _, _)| *i)?;
+    let high = *self
+      .cards
+      .iter()
+      .find(|c| c.rank as u8 == highest.0.0 as u8 + 2)
+      .unwrap();
+    Some(Score::Straight { high })
   }
 
   pub fn is_flush(&self) -> Option<Score> {
@@ -281,7 +276,7 @@ impl Hand {
         }
       });
       return Some(Score::Flush {
-        high: suited.first().unwrap().clone(),
+        high: *suited.first().unwrap(),
       });
     }
 
@@ -292,16 +287,16 @@ impl Hand {
     self.is_flush()?;
     self.is_straight()?;
     Some(Score::StraightFlush {
-      high: self.cards.last().unwrap().clone(),
+      high: *self.cards.last().unwrap(),
     })
   }
 
   pub fn is_royal_flush(&self) -> Option<Score> {
     self.is_flush()?;
-    if let Score::Straight { high } = self.is_straight()? {
-      if high.rank == Rank::Ace {
-        return Some(Score::RoyalFlush { high });
-      }
+    if let Score::Straight { high } = self.is_straight()?
+      && high.rank == Rank::Ace
+    {
+      return Some(Score::RoyalFlush { high });
     }
     None
   }
@@ -319,9 +314,9 @@ fn find_with_count(cards: &Vec<Card>, count: u8) -> Option<(Card, Vec<Card>)> {
   if let Some((value, _)) = counts.iter().enumerate().rfind(|(_, c)| c >= &&count) {
     let (cards, rest): (Vec<Card>, Vec<Card>) = cards
       .iter()
-      .cloned()
+      .copied()
       .partition(|c| c.rank as usize == value);
-    return Some((cards.last().unwrap().clone(), rest));
+    return Some((*cards.last().unwrap(), rest));
   }
 
   None

@@ -21,8 +21,8 @@ pub fn elo(white: f64, black: f64, result: Result) -> (f64, f64) {
 }
 
 pub fn expected_win(white: f64, black: f64) -> (f64, f64) {
-  let q_white = 10.0f64.powf(white as f64 / 400.0);
-  let q_black = 10.0f64.powf(black as f64 / 400.0);
+  let q_white = 10.0f64.powf(white / 400.0);
+  let q_black = 10.0f64.powf(black / 400.0);
   let q_sum = q_white + q_black;
   (q_white / q_sum, q_black / q_sum)
 }

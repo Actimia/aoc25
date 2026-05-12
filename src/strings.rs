@@ -76,20 +76,20 @@ fn encode_char(ch: char, dst: &mut impl Extend<u8>) -> Result<usize, UTF8Error> 
       dst.extend([ch as u8]);
       1
     }
-    ..0x800 => {
+    0x80..0x800 => {
       let a = 0b11000000 | ((ch >> 6) as u8 & 0b00011111);
       let b = 0b10000000 | (ch as u8 & 0b00111111);
       dst.extend([a, b]);
       2
     }
-    ..0x10000 => {
+    0x800..0x10000 => {
       let a = 0b11100000 | ((ch >> 12) as u8 & 0b00001111);
       let b = 0b10000000 | ((ch >> 6) as u8 & 0b00111111);
       let c = 0b10000000 | (ch as u8 & 0b00111111);
       dst.extend([a, b, c]);
       3
     }
-    ..=0x1ffff => {
+    0x10000..=0x1ffff => {
       let a = 0b11110000 | ((ch >> 18) as u8 & 0b00000111);
       let b = 0b10000000 | ((ch >> 12) as u8 & 0b00111111);
       let c = 0b10000000 | ((ch >> 6) as u8 & 0b00111111);
