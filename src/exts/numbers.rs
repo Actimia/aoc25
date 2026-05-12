@@ -53,6 +53,11 @@ impl UnsignedExt for u64 {
 #[derive(Clone, Copy, Debug)]
 pub struct ComparableF64(pub f64);
 
+impl PartialEq<f64> for ComparableF64 {
+  fn eq(&self, other: &f64) -> bool {
+    self.0.total_cmp(&other) == Ordering::Equal
+  }
+}
 impl PartialEq for ComparableF64 {
   fn eq(&self, other: &Self) -> bool {
     self.0.total_cmp(&other.0) == Ordering::Equal
@@ -65,6 +70,13 @@ impl PartialOrd for ComparableF64 {
     Some(self.cmp(other))
   }
 }
+
+impl PartialOrd<f64> for ComparableF64 {
+  fn partial_cmp(&self, other: &f64) -> Option<Ordering> {
+    Some(self.cmp(&ComparableF64(*other)))
+  }
+}
+
 impl Ord for ComparableF64 {
   fn cmp(&self, other: &Self) -> Ordering {
     self.0.total_cmp(&other.0)

@@ -24,16 +24,16 @@ pub fn dice_sorensen_search<'a, 'b>(
   needle: &'a str,
   haystack: impl AsRef<[&'b str]>,
 ) -> Option<(&'b str, f64)> {
-  let needle: Bigrams = needle.as_bytes().array_windows::<2>().collect();
+  let needle: Bigrams = needle.as_bytes().array_windows().collect();
   haystack
     .as_ref()
     .iter()
     .max_by_key(|cand| {
-      let cand: Bigrams = cand.as_bytes().array_windows::<2>().collect();
+      let cand = cand.as_bytes().array_windows().collect();
       dice_sorensen(&cand, &needle).comparable()
     })
     .map(|best| {
-      let best_bigrams: Bigrams = best.as_bytes().array_windows::<2>().collect();
+      let best_bigrams = best.as_bytes().array_windows().collect();
       let score = dice_sorensen(&best_bigrams, &needle);
       (*best, score)
     })

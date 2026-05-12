@@ -1,7 +1,9 @@
+pub mod assert;
 pub mod avg;
 pub mod bloomfilter;
 pub mod cards;
 pub mod elo;
+pub mod eqish;
 pub mod events;
 pub mod exts;
 pub mod fuzzy;

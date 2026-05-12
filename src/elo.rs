@@ -29,6 +29,8 @@ pub fn expected_win(white: f64, black: f64) -> (f64, f64) {
 
 #[cfg(test)]
 pub mod tests {
+  use crate::assert_approx_eq;
+
   use super::*;
 
   #[test]
@@ -42,17 +44,16 @@ pub mod tests {
     assert_eq!(elo(1500.0, 1500.0, Result::Tie), (0.0, 0.0));
     assert_eq!(elo(1500.0, 1500.0, Result::Black), (-16.0, 16.0));
 
-    assert_eq!(
-      elo(2400.0, 2700.0, Result::White),
-      (27.168654169237655, -27.168654169237655)
-    );
-    assert_eq!(
-      elo(2400.0, 2700.0, Result::Tie),
-      (11.168654169237655, -11.168654169237655)
-    );
-    assert_eq!(
-      elo(2400.0, 2700.0, Result::Black),
-      (-4.831345830762346, 4.831345830762345)
-    );
+    let (w_delta, b_delta) = elo(2400.0, 2700.0, Result::White);
+    assert_approx_eq!(w_delta, 27.17);
+    assert_approx_eq!(b_delta, -27.17);
+
+    let (w_delta, b_delta) = elo(2400.0, 2700.0, Result::Tie);
+    assert_approx_eq!(w_delta, 11.17);
+    assert_approx_eq!(b_delta, -11.17);
+
+    let (w_delta, b_delta) = elo(2400.0, 2700.0, Result::Black);
+    assert_approx_eq!(w_delta, -4.83);
+    assert_approx_eq!(b_delta, 4.83);
   }
 }
