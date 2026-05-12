@@ -9,10 +9,10 @@ use itertools::Itertools;
 #[repr(u8)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Clone, Copy)]
 enum Suit {
-  Spades,
-  Hearts,
-  Diamonds,
-  Clubs,
+  Spades = 0,
+  Hearts = 1,
+  Diamonds = 2,
+  Clubs = 3,
 }
 
 impl TryFrom<char> for Suit {
@@ -40,49 +40,22 @@ impl Display for Suit {
   }
 }
 
+#[repr(u8)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Clone, Copy)]
 enum Rank {
-  Two,
-  Three,
-  Four,
-  Five,
-  Six,
-  Seven,
-  Eight,
-  Nine,
-  Ten,
-  Jack,
-  Queen,
-  King,
-  Ace,
-}
-
-impl Rank {
-  fn value(&self) -> u8 {
-    match self {
-      Rank::Two => 2,
-      Rank::Three => 3,
-      Rank::Four => 4,
-      Rank::Five => 5,
-      Rank::Six => 6,
-      Rank::Seven => 7,
-      Rank::Eight => 8,
-      Rank::Nine => 9,
-      Rank::Ten => 10,
-      Rank::Jack => 11,
-      Rank::Queen => 12,
-      Rank::King => 13,
-      Rank::Ace => 14,
-    }
-  }
-
-  fn is_consecutive(&self, other: Rank) -> bool {
-    match (self, other) {
-      (Rank::Two, Rank::Ace) => true,
-      (Rank::Ace, Rank::Two) => true,
-      _ => self.value().abs_diff(other.value()) == 1,
-    }
-  }
+  Two = 2,
+  Three = 3,
+  Four = 4,
+  Five = 5,
+  Six = 6,
+  Seven = 7,
+  Eight = 8,
+  Nine = 9,
+  Ten = 10,
+  Jack = 11,
+  Queen = 12,
+  King = 13,
+  Ace = 14,
 }
 
 impl TryFrom<char> for Rank {
@@ -200,7 +173,7 @@ pub struct Hand {
 
 impl Hand {
   pub fn from(mut cards: Vec<Card>) -> Self {
-    assert_eq!(cards.len(), 5);
+    assert!(!cards.is_empty());
     cards.sort();
     Hand { cards }
   }
@@ -253,32 +226,71 @@ impl Hand {
   }
 
   pub fn is_straight(&self) -> Option<Score> {
-    (self
-      .cards
+    let counts = {
+      let mut res = [0; 13];
+      for card in &self.cards {
+        // we dont use slot 0 or 1
+        res[card.rank as usize - 2] += 1;
+      }
+      res
+    };
+
+    if let Some(highest) = counts
       .iter()
+      .enumerate()
+      .rev()
       .circular_tuple_windows()
-      .filter(|(a, b)| a.rank.is_consecutive(b.rank))
-      .count()
-      == 4)
-      .then(|| Score::Straight {
-        high: self.cards.last().unwrap().clone(),
+      .filter(|((_, c1), (_, c2), (_, c3), (_, c4), (_, c5))| {
+        **c1 != 0 && **c2 != 0 && **c3 != 0 && **c4 != 0 && **c5 != 0
       })
+      .max_by_key(|((i, _), _, _, _, _)| *i)
+    {
+      let high = self
+        .cards
+        .iter()
+        .find(|c| c.rank as u8 == highest.0.0 as u8 + 2)
+        .unwrap()
+        .clone();
+      return Some(Score::Straight { high });
+    }
+
+    return None;
   }
 
   pub fn is_flush(&self) -> Option<Score> {
-    self
-      .cards
+    let counts = {
+      let mut res = [0; 4];
+      for card in &self.cards {
+        res[card.suit as usize] += 1;
+      }
+      res
+    };
+    if let Some((suit, _count)) = counts
       .iter()
-      .map(|c| c.suit)
-      .all_equal()
-      .then(|| Score::Flush {
-        high: self.cards.last().unwrap().clone(),
-      })
+      .enumerate()
+      .filter(|(_i, c)| **c >= 5)
+      .min_by_key(|(i, _)| *i)
+    {
+      let mut count = 0;
+      let (suited, _rest): (Vec<Card>, Vec<Card>) = self.cards.iter().rev().partition(|c| {
+        if c.suit as usize == suit {
+          count += 1;
+          count < 5
+        } else {
+          false
+        }
+      });
+      return Some(Score::Flush {
+        high: suited.first().unwrap().clone(),
+      });
+    }
+
+    None
   }
 
   pub fn is_straight_flush(&self) -> Option<Score> {
-    self.is_straight()?;
     self.is_flush()?;
+    self.is_straight()?;
     Some(Score::StraightFlush {
       high: self.cards.last().unwrap().clone(),
     })
@@ -299,7 +311,7 @@ fn find_with_count(cards: &Vec<Card>, count: u8) -> Option<(Card, Vec<Card>)> {
   let counts = {
     let mut res = [0; 15];
     for card in cards {
-      res[card.rank.value() as usize] += 1
+      res[card.rank as usize] += 1
     }
     res
   };
@@ -308,7 +320,7 @@ fn find_with_count(cards: &Vec<Card>, count: u8) -> Option<(Card, Vec<Card>)> {
     let (cards, rest): (Vec<Card>, Vec<Card>) = cards
       .iter()
       .cloned()
-      .partition(|c| c.rank.value() == value as u8);
+      .partition(|c| c.rank as usize == value);
     return Some((cards.last().unwrap().clone(), rest));
   }
 
@@ -399,7 +411,7 @@ mod tests {
     assert_eq!(
       hand(["QS", "KS", "AD", "2C", "3H"]).evaluate(),
       Score::Straight {
-        high: "AD".parse().unwrap()
+        high: "3H".parse().unwrap()
       }
     );
     assert_eq!(
