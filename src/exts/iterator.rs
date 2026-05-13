@@ -3,7 +3,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 
 pub trait IteratorExt: Iterator + Sized {
-  fn unique_by<M, F>(self, mapper: F) -> UniqueIterator<M, Self::Item, Self, F>
+  /// Removes duplicate items from the iterator by the specified key.
+  fn unique_by<F, M>(self, mapper: F) -> UniqueIterator<Self, F, M>
   where
     Self: Sized,
     F: FnMut(&Self::Item) -> M,
@@ -12,6 +13,19 @@ pub trait IteratorExt: Iterator + Sized {
     UniqueIterator {
       inner: self,
       mapper,
+      seen: HashSet::default(),
+    }
+  }
+
+  /// Removes duplicate items from the iterator.
+  fn unique(self) -> UniqueIterator<Self, impl FnMut(&Self::Item) -> Self::Item, Self::Item>
+  where
+    Self: Sized,
+    Self::Item: Hash + Eq + Clone,
+  {
+    UniqueIterator {
+      inner: self,
+      mapper: |i| i.clone(),
       seen: HashSet::default(),
     }
   }
@@ -109,20 +123,23 @@ where
   }
 }
 
-pub struct UniqueIterator<M: Hash + Eq + Clone, T, I: Iterator<Item = T>, F: FnMut(&T) -> M> {
+pub struct UniqueIterator<I: Iterator, F: FnMut(&I::Item) -> M, M: Hash + Eq + Clone> {
   inner: I,
   mapper: F,
   seen: HashSet<M>,
 }
 
-impl<M: Hash + Eq + Clone, T, I: Iterator<Item = T>, F: FnMut(&T) -> M> Iterator
-  for UniqueIterator<M, T, I, F>
+impl<I, F, M> Iterator for UniqueIterator<I, F, M>
+where
+  I: Iterator,
+  F: FnMut(&I::Item) -> M,
+  M: Hash + Eq + Clone,
 {
-  type Item = T;
+  type Item = I::Item;
 
   fn next(&mut self) -> Option<Self::Item> {
     for next in self.inner.by_ref() {
-      let mapped = (self.mapper)(&next);
+      let mapped = (self.mapper)(&next).clone();
       if self.seen.contains(&mapped) {
         continue;
       }
@@ -140,17 +157,17 @@ mod tests {
   #[test]
   fn test_unique() {
     let nums = vec![1, 2, 3, 3, 4, 1, 4];
-    let unique: Vec<_> = nums.into_iter().unique_by(|&f| f.clone()).collect();
+    let unique: Vec<_> = nums.into_iter().unique().collect();
     assert_eq!(unique, vec![1, 2, 3, 4]);
   }
 
-  #[derive(PartialEq, Eq, Debug)]
-  struct Val(i32, i32);
-
   #[test]
   fn test_unique_by() {
+    #[derive(PartialEq, Eq, Debug)]
+    struct Val(i32, i32);
+
     let vals = vec![Val(1, 2), Val(1, 3), Val(2, 3), Val(1, 4)];
-    let unique: Vec<_> = vals.into_iter().unique_by(|v| v.0).collect();
+    let unique: Vec<_> = vals.into_iter().unique_by(|a| a.0).collect();
     assert_eq!(unique, vec![Val(1, 2), Val(2, 3)]);
   }
 
