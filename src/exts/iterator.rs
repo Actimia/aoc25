@@ -8,7 +8,7 @@ pub trait IteratorExt: Iterator + Sized {
   where
     Self: Sized,
     F: FnMut(&Self::Item) -> M,
-    M: Hash + Eq + Clone,
+    M: Hash + Eq,
   {
     UniqueIterator {
       inner: self,
@@ -32,6 +32,7 @@ pub trait IteratorExt: Iterator + Sized {
 
   fn repeat_each(self, count: usize) -> RepeatEachIterator<Self>
   where
+    Self: Sized,
     Self::Item: Copy,
   {
     assert!(count != 0, "count cannot be 0");
@@ -43,16 +44,9 @@ pub trait IteratorExt: Iterator + Sized {
     }
   }
 
-  /*
-  fn transpose<I, T>(self) -> impl Iterator<Item = I>
-  where
-    Self: Iterator<Item = I>,
-    I: Iterator<Item = T>,
-  {
-    vec![].into_iter()
-  } */
   fn flatten_verbose<T, E>(self) -> impl Iterator<Item = T>
   where
+    Self: Sized,
     Self: Iterator<Item = Result<T, E>>,
     E: Debug,
   {
@@ -123,7 +117,7 @@ where
   }
 }
 
-pub struct UniqueIterator<I: Iterator, F: FnMut(&I::Item) -> M, M: Hash + Eq + Clone> {
+pub struct UniqueIterator<I: Iterator, F: FnMut(&I::Item) -> M, M: Hash + Eq> {
   inner: I,
   mapper: F,
   seen: HashSet<M>,
@@ -133,13 +127,13 @@ impl<I, F, M> Iterator for UniqueIterator<I, F, M>
 where
   I: Iterator,
   F: FnMut(&I::Item) -> M,
-  M: Hash + Eq + Clone,
+  M: Hash + Eq,
 {
   type Item = I::Item;
 
   fn next(&mut self) -> Option<Self::Item> {
     for next in self.inner.by_ref() {
-      let mapped = (self.mapper)(&next).clone();
+      let mapped = (self.mapper)(&next);
       if self.seen.contains(&mapped) {
         continue;
       }
