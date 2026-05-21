@@ -8,6 +8,10 @@ use anyhow::ensure;
 use itertools::Itertools;
 use num_traits::Euclid;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Grid<T> {
   data: Box<[T]>,
@@ -291,13 +295,12 @@ impl<'a, T> Iterator for StepIterator<'a, T> {
   type Item = (&'a T, (usize, usize));
 
   fn next(&mut self) -> Option<Self::Item> {
-    let res = self
-      .grid
-      .get(self.cursor.0, self.cursor.1)
-      .map(|value| (value, self.cursor));
     self.cursor.0 = self.cursor.0.checked_add_signed(self.step.0)?;
     self.cursor.1 = self.cursor.1.checked_add_signed(self.step.1)?;
-    res
+    self
+      .grid
+      .get(self.cursor.0, self.cursor.1)
+      .map(|value| (value, self.cursor))
   }
 }
 
@@ -438,13 +441,13 @@ mod tests {
     };
 
     let steps: Vec<usize> = grid.step((0, 0), (0, 1)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![0, 1, 2, 3, 4]);
+    assert_eq!(steps, vec![1, 2, 3, 4]);
 
     let steps: Vec<usize> = grid.step((0, 0), (1, 0)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![0, 5, 10, 15, 20]);
+    assert_eq!(steps, vec![5, 10, 15, 20]);
 
     let steps: Vec<usize> = grid.step((0, 0), (1, 1)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![0, 6, 12, 18, 24]);
+    assert_eq!(steps, vec![6, 12, 18, 24]);
   }
 
   #[test]

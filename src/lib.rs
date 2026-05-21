@@ -20,3 +20,4 @@ pub mod strings;
 pub mod time;
 pub mod unionfind;
 pub mod vex;
+pub mod truthy;
