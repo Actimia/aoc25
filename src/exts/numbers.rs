@@ -55,7 +55,7 @@ pub struct ComparableF64(pub f64);
 
 impl PartialEq<f64> for ComparableF64 {
   fn eq(&self, other: &f64) -> bool {
-    self.0.total_cmp(&other) == Ordering::Equal
+    self.0.total_cmp(other) == Ordering::Equal
   }
 }
 impl PartialEq for ComparableF64 {

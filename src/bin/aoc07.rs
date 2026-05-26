@@ -41,7 +41,7 @@ fn part_one(manifold: &Grid<TachyonManifold>) -> u64 {
 
   let mut splits = 0;
 
-  for row in 1..manifold.rows() {
+  for row in 1..manifold.height() {
     for splitter in manifold
       .row(row)
       .positions(|c| matches!(c, TachyonManifold::Splitter))
@@ -71,7 +71,7 @@ fn part_two(manifold: &Grid<TachyonManifold>) -> u64 {
     })
     .collect();
 
-  for row in 1..manifold.rows() {
+  for row in 1..manifold.height() {
     for splitter in manifold
       .row(row)
       .positions(|c| matches!(c, TachyonManifold::Splitter))

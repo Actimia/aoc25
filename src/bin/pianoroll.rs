@@ -52,7 +52,7 @@ fn main() {
   let mut grid = Grid::new(24, 60, PianoRoll::Silence);
 
   loop {
-    for x in 0..grid.rows() {
+    for x in 0..grid.height() {
       grid[(x, 0)] = PianoRoll::Silence;
     }
     for (idx, note) in patterns

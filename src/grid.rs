@@ -15,15 +15,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Grid<T> {
   data: Box<[T]>,
-  rows: usize,
-  cols: usize,
+  height: usize,
+  width: usize,
 }
 
 impl<T: Display> Display for Grid<T> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    for row in 0..self.rows {
-      for col in 0..self.cols {
-        write!(f, "{}", self[(row, col)])?;
+    for y in 0..self.height {
+      for x in 0..self.width {
+        write!(f, "{}", self[(x, y)])?;
       }
       writeln!(f)?
     }
@@ -32,26 +32,26 @@ impl<T: Display> Display for Grid<T> {
 }
 
 impl<T: Sized + Copy> Grid<T> {
-  pub fn new(rows: usize, cols: usize, default: T) -> Self {
+  pub fn new(width: usize, height: usize, default: T) -> Self {
     Self {
-      data: vec![default; rows * cols].into_boxed_slice(),
-      rows,
-      cols,
+      data: vec![default; width * height].into_boxed_slice(),
+      height,
+      width,
     }
   }
 }
 
 impl<T> Grid<T> {
   /// Takes data stored in row-wise format and creates a Grid over it.
-  /// Returns `Err` if  `data.len()` is not a multiple of `cols`.
-  pub fn from_data(data: impl IntoIterator<Item = T>, cols: usize) -> anyhow::Result<Self> {
+  /// Returns `Err` if  `data.len()` is not a multiple of `width`.
+  pub fn from_data(data: impl IntoIterator<Item = T>, width: usize) -> anyhow::Result<Self> {
     let data: Vec<T> = data.into_iter().collect();
-    let (rows, rem) = data.len().div_rem_euclid(&cols);
+    let (rows, rem) = data.len().div_rem_euclid(&width);
     ensure!(rem == 0, "bad data size ({})", data.len());
     Ok(Self {
       data: data.into_boxed_slice(),
-      rows,
-      cols,
+      height: rows,
+      width,
     })
   }
 
@@ -71,22 +71,22 @@ impl<T> Grid<T> {
   }
 
   #[inline]
-  pub fn rows(&self) -> usize {
-    self.rows
+  pub fn height(&self) -> usize {
+    self.height
   }
 
   #[inline]
-  pub fn cols(&self) -> usize {
-    self.cols
+  pub fn width(&self) -> usize {
+    self.width
   }
 
   /// Computes the actual data index of a coordinate pair. Returns None if the coordinates are out of bounds.
   #[inline]
-  fn get_index(&self, row: usize, col: usize) -> Option<usize> {
-    if self.rows <= row || self.cols <= col {
+  fn get_index(&self, x: usize, y: usize) -> Option<usize> {
+    if self.height <= y || self.width <= x {
       None
     } else {
-      Some(row * self.cols + col)
+      Some(y * self.width + x)
     }
   }
 
@@ -94,7 +94,7 @@ impl<T> Grid<T> {
   /// Pushes each row down by `n` (or up for negative `n`),
   /// filling with rows from the bottom (or top for negative `n`).
   pub fn rotate_rows(&mut self, n: isize) {
-    let offset = n * self.cols as isize;
+    let offset = n * self.width as isize;
 
     if offset.is_positive() {
       self.data.rotate_right(offset as usize);
@@ -107,7 +107,7 @@ impl<T> Grid<T> {
   /// Pushes each column right by `n` (or left for negative `n`),
   /// filling with columns from the left (or right for negative `n`).
   pub fn rotate_cols(&mut self, offset: isize) {
-    for col in self.data.chunks_exact_mut(self.cols) {
+    for col in self.data.chunks_exact_mut(self.width) {
       if offset.is_positive() {
         col.rotate_right(offset as usize);
       } else {
@@ -116,11 +116,15 @@ impl<T> Grid<T> {
     }
   }
 
+  /// Steps through the grid until out of bounds.
+  /// Panics if `from` is out of bounds or if `step == (0,0)`.
   pub fn step(
     &self,
     from: (usize, usize),
     step: (isize, isize),
   ) -> impl Iterator<Item = (&T, (usize, usize))> {
+    assert_ne!(step, (0, 0));
+    assert!(self.get_index(from.0, from.1).is_some());
     StepIterator {
       grid: self,
       cursor: from,
@@ -128,80 +132,80 @@ impl<T> Grid<T> {
     }
   }
 
-  pub fn row(&self, row: usize) -> impl DoubleEndedIterator<Item = &T> {
-    let start = row * self.cols();
-    let end = start + self.cols();
+  pub fn row(&self, y: usize) -> impl DoubleEndedIterator<Item = &T> {
+    let start = y * self.width();
+    let end = start + self.width();
     self.data[start..end].iter()
   }
 
-  pub fn row_mut(&mut self, row: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-    let start = row * self.cols();
-    let end = start + self.cols();
+  pub fn row_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut T> {
+    let start = y * self.width();
+    let end = start + self.width();
     self.data[start..end].iter_mut()
   }
 
-  pub fn col(&self, col: usize) -> impl DoubleEndedIterator<Item = &T> {
-    let start = self.get_index(0, col).unwrap();
-    let step = self.cols();
+  pub fn col(&self, x: usize) -> impl DoubleEndedIterator<Item = &T> {
+    let start = self.get_index(x, 0).unwrap();
+    let step = self.width();
     self.data[start..].iter().step_by(step)
   }
 
-  pub fn col_mut(&mut self, col: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-    let start = self.get_index(0, col).unwrap();
-    let step = self.cols();
+  pub fn col_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut T> {
+    let start = self.get_index(x, 0).unwrap();
+    let step = self.width();
     self.data[start..].iter_mut().step_by(step)
   }
 
   /// Gets a reference to a cell in the grid. Returns None if the coordinates were invalid.
-  pub fn get(&self, row: usize, col: usize) -> Option<&T> {
-    let idx = self.get_index(row, col)?;
+  pub fn get(&self, x: usize, y: usize) -> Option<&T> {
+    let idx = self.get_index(x, y)?;
     self.data.get(idx)
   }
 
   /// Gets a mutable reference to a cell in the grid. Returns None if the coordinates were invalid.
-  pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
-    let idx = self.get_index(row, col)?;
+  pub fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut T> {
+    let idx = self.get_index(x, y)?;
     self.data.get_mut(idx)
   }
 
   /// Sets a cell in the grid, returning the previous value, or None if the coordinates were invalid.
-  pub fn set(&mut self, row: usize, col: usize, value: T) -> Option<T> {
-    let prev = self.get_mut(row, col)?;
+  pub fn set(&mut self, x: usize, y: usize, value: T) -> Option<T> {
+    let prev = self.get_mut(x, y)?;
     Some(std::mem::replace(prev, value))
   }
 
-  pub fn neighbors(&self, row: usize, col: usize) -> impl Iterator<Item = &T> {
+  pub fn neighbors(&self, x: usize, y: usize) -> impl Iterator<Item = &T> {
     let neighbors = [
-      self.get(row.wrapping_sub(1), col.wrapping_sub(1)),
-      self.get(row.wrapping_sub(1), col),
-      self.get(row.wrapping_sub(1), col + 1),
-      self.get(row, col.wrapping_sub(1)),
-      self.get(row, col + 1),
-      self.get(row + 1, col.wrapping_sub(1)),
-      self.get(row + 1, col),
-      self.get(row + 1, col + 1),
+      self.get(x.wrapping_sub(1), y.wrapping_sub(1)),
+      self.get(x, y.wrapping_sub(1)),
+      self.get(x + 1, y.wrapping_sub(1)),
+      self.get(x.wrapping_sub(1), y),
+      self.get(x + 1, y),
+      self.get(x.wrapping_sub(1), y + 1),
+      self.get(x, y + 1),
+      self.get(x + 1, y + 1),
     ];
 
     neighbors.into_iter().flatten()
   }
 
-  pub fn orthogonal(&self, row: usize, col: usize) -> impl Iterator<Item = &T> {
+  pub fn orthogonal(&self, x: usize, y: usize) -> impl Iterator<Item = &T> {
     let neighbors = [
-      self.get(row - 1, col),
-      self.get(row, col - 1),
-      self.get(row, col + 1),
-      self.get(row + 1, col),
+      self.get(x, y - 1),
+      self.get(x - 1, y),
+      self.get(x + 1, y),
+      self.get(x, y + 1),
     ];
 
     neighbors.into_iter().flatten()
   }
 
-  pub fn count_neighbors(&self, row: usize, col: usize, pred: impl Fn(&T) -> bool) -> usize {
-    self.neighbors(row, col).filter(|v| pred(*v)).count()
+  pub fn count_neighbors(&self, x: usize, y: usize, pred: impl Fn(&T) -> bool) -> usize {
+    self.neighbors(x, y).filter(|v| pred(*v)).count()
   }
 
   pub fn dimensions(&self) -> (usize, usize) {
-    (self.rows, self.cols)
+    (self.height, self.width)
   }
 
   pub fn iter(&self) -> impl Iterator<Item = &T> {
@@ -210,16 +214,16 @@ impl<T> Grid<T> {
 
   pub fn cells(&self) -> impl Iterator<Item = (usize, usize, &T)> {
     self.data.iter().enumerate().map(|(i, data)| {
-      let (row, col) = i.div_rem_euclid(&self.cols());
-      (row, col, data)
+      let (y, x) = i.div_rem_euclid(&self.width());
+      (x, y, data)
     })
   }
 
   pub fn cells_mut(&mut self) -> impl Iterator<Item = (usize, usize, &mut T)> {
-    let rows = self.rows();
+    let rows = self.height();
     self.data.iter_mut().enumerate().map(move |(i, data)| {
-      let (row, col) = i.div_rem_euclid(&rows);
-      (row, col, data)
+      let (y, x) = i.div_rem_euclid(&rows);
+      (x, y, data)
     })
   }
 
@@ -227,37 +231,37 @@ impl<T> Grid<T> {
   where
     T: Clone,
   {
-    let data: Vec<T> = (0..self.cols())
+    let data: Vec<T> = (0..self.width())
       .flat_map(|c| self.col(c).cloned())
       .collect();
 
-    Grid::from_data(data, self.rows()).unwrap()
+    Grid::from_data(data, self.height()).unwrap()
   }
 
   pub fn rotate(&self) -> Self
   where
     T: Clone,
   {
-    let data: Vec<_> = (0..self.cols())
+    let data: Vec<_> = (0..self.width())
       .rev()
       .flat_map(|x| self.col(x))
       .cloned()
       .collect();
 
-    Grid::from_data(data, self.rows()).unwrap()
+    Grid::from_data(data, self.height()).unwrap()
   }
 
   pub fn flip(&self) -> Self
   where
     T: Clone,
   {
-    let data: Vec<_> = (0..self.rows())
+    let data: Vec<_> = (0..self.height())
       .rev()
       .flat_map(|x| self.row(x).rev())
       .cloned()
       .collect();
 
-    Grid::from_data(data, self.rows()).unwrap()
+    Grid::from_data(data, self.height()).unwrap()
   }
 }
 
@@ -295,12 +299,15 @@ impl<'a, T> Iterator for StepIterator<'a, T> {
   type Item = (&'a T, (usize, usize));
 
   fn next(&mut self) -> Option<Self::Item> {
-    self.cursor.0 = self.cursor.0.checked_add_signed(self.step.0)?;
-    self.cursor.1 = self.cursor.1.checked_add_signed(self.step.1)?;
-    self
+    let res = self
       .grid
       .get(self.cursor.0, self.cursor.1)
-      .map(|value| (value, self.cursor))
+      .map(|value| (value, self.cursor));
+    self.cursor = (
+      self.cursor.0.wrapping_add_signed(self.step.0),
+      self.cursor.1.wrapping_add_signed(self.step.1),
+    );
+    res
   }
 }
 
@@ -377,8 +384,8 @@ mod tests {
     let b = a.transpose();
     let transposed: Grid<char> = Grid::from_str("ad\nbe\ncf").unwrap();
 
-    assert_eq!(a.cols(), b.rows());
-    assert_eq!(a.rows(), b.cols());
+    assert_eq!(a.width(), b.height());
+    assert_eq!(a.height(), b.width());
     assert_eq!(b, transposed);
   }
 
@@ -422,9 +429,11 @@ mod tests {
 
   #[test]
   fn test_cells() {
-    let g: Grid<char> = Grid::from_str("...\n...").unwrap();
+    let g: Grid<char> = Grid::from_str("123\n456").unwrap();
     let coords: Vec<_> = g.cells().map(|(r, c, _)| (r, c)).collect();
-    assert_eq!(coords, vec![(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)])
+    assert_eq!(coords, vec![(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)]);
+    let data: Vec<_> = g.cells().map(|(_, _, d)| d).copied().collect();
+    assert_eq!(data, vec!['1', '2', '3', '4', '5', '6']);
   }
 
   #[test]
@@ -441,13 +450,16 @@ mod tests {
     };
 
     let steps: Vec<usize> = grid.step((0, 0), (0, 1)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![1, 2, 3, 4]);
+    assert_eq!(steps, vec![0, 1, 2, 3, 4]);
 
     let steps: Vec<usize> = grid.step((0, 0), (1, 0)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![5, 10, 15, 20]);
+    assert_eq!(steps, vec![0, 5, 10, 15, 20]);
 
     let steps: Vec<usize> = grid.step((0, 0), (1, 1)).map(|s| *s.0).collect();
-    assert_eq!(steps, vec![6, 12, 18, 24]);
+    assert_eq!(steps, vec![0, 6, 12, 18, 24]);
+
+    let steps: Vec<usize> = grid.step((4, 4), (0, -1)).map(|s| *s.0).collect();
+    assert_eq!(steps, vec![24, 23, 22, 21, 20]);
   }
 
   #[test]
