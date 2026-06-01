@@ -212,6 +212,14 @@ impl<T> Grid<T> {
     self.data.iter()
   }
 
+  pub fn map<F, U>(self, f: F) -> Grid<U>
+  where
+    F: FnMut(T) -> U,
+  {
+    let data = self.data.into_iter().map(f);
+    Grid::from_data(data, self.width).expect("From existing grid")
+  }
+
   pub fn cells(&self) -> impl Iterator<Item = (usize, usize, &T)> {
     self.data.iter().enumerate().map(|(i, data)| {
       let (y, x) = i.div_rem_euclid(&self.width());
@@ -330,6 +338,7 @@ impl<T> IndexMut<(usize, usize)> for Grid<T> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use core::assert_matches;
 
   #[test]
   fn test_construction() {

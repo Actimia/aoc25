@@ -339,6 +339,7 @@ pub enum Score {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use core::assert_matches;
 
   fn hand(cards: [&str; 5]) -> Hand {
     Hand::from(cards.iter().map(|c| c.parse::<Card>().unwrap()).collect())
@@ -347,12 +348,12 @@ mod tests {
   #[test]
   fn parse() {
     let card: Card = "A♥".parse().unwrap();
-    assert_eq!(card.rank, Rank::Ace);
-    assert_eq!(card.suit, Suit::Hearts);
+    assert_matches!(card.rank, Rank::Ace);
+    assert_matches!(card.suit, Suit::Hearts);
 
     let card: Card = "2S".try_into().unwrap();
-    assert_eq!(card.rank, Rank::Two);
-    assert_eq!(card.suit, Suit::Spades);
+    assert_matches!(card.rank, Rank::Two);
+    assert_matches!(card.suit, Suit::Spades);
   }
 
   #[test]

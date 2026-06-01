@@ -43,20 +43,21 @@ fn main() {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use core::assert_matches;
 
   #[test]
   fn test_parsing() {
     let a: Turn = "R56".try_into().unwrap();
-    assert_eq!(a.0, 56);
+    assert_matches!(a, Turn(56));
 
     let a: Turn = "L33".try_into().unwrap();
-    assert_eq!(a.0, -33);
+    assert_matches!(a, Turn(-33));
 
     let a: Turn = "L133".try_into().unwrap();
-    assert_eq!(a.0, -133);
+    assert_matches!(a, Turn(-133));
 
     let a: Result<Turn, _> = "Q3".try_into();
-    assert!(a.is_err());
+    assert_matches!(a, Err(_));
   }
 
   #[test]

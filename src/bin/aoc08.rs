@@ -79,7 +79,7 @@ fn part_one(graph: &Graph<I64Vec3, u64>, count: usize) -> usize {
   });
 
   let mut edges: Vec<_> = graph.edges().collect();
-  edges.sort_by(|(_, a), (_, b)| a.cmp(b));
+  edges.sort_by_key(|&(_, a)| a);
 
   for ((from, to), _) in edges {
     connections.add_edge(from, to, ());
@@ -98,7 +98,7 @@ fn part_two(graph: &Graph<I64Vec3, u64>) -> u64 {
   // 6934702555
 
   let mut edges: Vec<_> = graph.edges().collect();
-  edges.sort_by(|(_, a), (_, b)| a.cmp(b));
+  edges.sort_by_key(|&(_, a)| a);
 
   let target_count = graph.num_nodes(); //- 1; // x nodes can be connected with x-1 edges
 

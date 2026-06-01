@@ -86,11 +86,12 @@ fn main() -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use core::assert_matches;
 
   #[test]
   fn test_one() {
     let bank: Bank = "123456123".try_into().unwrap();
-    assert_eq!(bank.part_one(), Some(63));
+    assert_matches!(bank.part_one(), Some(63));
 
     let bank: Bank = "987654321111111".try_into().unwrap();
     assert_eq!(bank.part_one(), Some(98));
