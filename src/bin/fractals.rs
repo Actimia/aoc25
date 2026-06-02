@@ -1,20 +1,24 @@
 use std::{
+  f32::consts::PI,
   ops::{Add, Mul},
+  sync::{Arc, Mutex},
   time::Instant,
 };
 
 use anyhow::Result;
 use aoc25::exts::duration::DurationExt;
+use color::{Lch, OpaqueColor};
 use image::{Rgb, RgbImage};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 fn main() -> Result<()> {
   let start = Instant::now();
   let width = 1920 * 2;
   let height = 1080 * 2;
-  let mut image = RgbImage::new(width, height);
+  let image = Arc::new(Mutex::new(RgbImage::new(width, height)));
 
   let center = Complex(-0.66, 0.0);
-  let resolution = 0.0009;
+  let resolution = 0.00066;
 
   let re_min = center.re() - (width as f64 / 2.0) * resolution;
   let re_max = ((width / 2) as f64) * resolution;
@@ -29,54 +33,81 @@ fn main() -> Result<()> {
     let im = im_min + (y as f64 * resolution);
     Complex(re, im)
   };
+
+  (0..width).into_par_iter().for_each(|x| {
+    for y in 0..height {
+      let pixel = mandelbrot(coords(x, y)).into();
+      image.lock().unwrap().put_pixel(x as u32, y as u32, pixel);
+    }
+  });
+
+  /*
   for x in 0..width {
     if x % 100 == 0 {
       println!("{x}/{width}");
     }
     for y in 0..height {
-      let pixel = color(mandelbrot(coords(x, y)));
-      image.put_pixel(x as u32, y as u32, pixel);
+      let pixel = mandelbrot(coords(x, y));
+      image.put_pixel(x as u32, y as u32, pixel.into());
     }
-  }
+  }*/
 
-  image.save("image.png")?;
+  image.lock().unwrap().save("image.png")?;
 
   println!("Finished in {}", start.elapsed().display());
   Ok(())
 }
 
-fn color(iters: Option<usize>) -> Rgb<u8> {
-  // iters = 0..=64
+enum FractalPixel {
+  Diverges(usize),
+  Converges(()),
+}
 
-  if let Some(iters) = iters {
-    let value = iters as u8 * 4;
-    Rgb([0, value, value])
-  } else {
-    Rgb([0, 0, 0])
+const MAX_ITERS: usize = 4096;
+
+impl From<FractalPixel> for Rgb<u8> {
+  fn from(value: FractalPixel) -> Self {
+    match value {
+      FractalPixel::Diverges(iters) => {
+        let s = iters as f32 / MAX_ITERS as f32;
+        let v = 1.0 - (PI * s).cos().powf(2.0);
+
+        let l = 75.0 - (75.0 * v);
+        let c = 28.0 + (75.0 - (75.0 * v));
+        let h = (360.0 * s).powf(1.5) % 360.0;
+        let lch = OpaqueColor::<Lch>::new([l, c, h]);
+        let rgb = lch.to_rgba8();
+
+        Rgb([rgb.r, rgb.g, rgb.b])
+
+        // Rgb([0, 4 * (x % 64) as u8, 4 * (x % 64) as u8])
+      }
+      FractalPixel::Converges(_) => Rgb([0, 0, 0]),
+    }
   }
 }
 
-fn mandelbrot(c: Complex) -> Option<usize> {
+fn mandelbrot(c: Complex) -> FractalPixel {
   let mut iters = 0;
   let mut z = Complex::zero();
+  //let mut seen = vec![];
 
   loop {
     //while z.abs2() < 4.0 && iters < 64 {
     z = (z * z) + c;
     iters += 1;
-    if iters > 64 {
-      return None;
-    }
-    let abs2 = z.abs2();
-    if abs2 < 1.0 {
-        
+    /*if seen.contains(&z) {
+      return FractalPixel::Converges(iters);
+    } else {
+      seen.push(z);
+    }*/
+    if iters > MAX_ITERS {
+      return FractalPixel::Converges(());
     }
     if z.abs2() > 4.0 {
-      break;
+      return FractalPixel::Diverges(iters);
     }
   }
-
-  Some(iters)
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
