@@ -1,7 +1,8 @@
 use std::{
   f32::consts::PI,
   ops::{Add, Mul},
-  sync::{Arc, Mutex},
+  sync::mpsc,
+  thread::spawn,
   time::Instant,
 };
 
@@ -13,20 +14,30 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 fn main() -> Result<()> {
   let start = Instant::now();
-  let width = 1920 * 2;
-  let height = 1080 * 2;
-  let image = Arc::new(Mutex::new(RgbImage::new(width, height)));
+  let size = 1920 * 2;
 
-  let center = Complex(-0.66, 0.0);
-  let resolution = 0.00066;
+  let center = Complex(-0.5, 0.6);
+  let resolution = 0.000055;
 
-  let re_min = center.re() - (width as f64 / 2.0) * resolution;
-  let re_max = ((width / 2) as f64) * resolution;
+  let half_size = (size / 2) as f64;
+  let re_min = center.re() - half_size * resolution;
+  let re_max = center.re() + half_size * resolution;
 
-  let im_min = center.im() - (height as f64 / 2.0) * resolution;
-  let im_max = ((height / 2) as f64) * resolution;
+  let im_min = center.im() - half_size * resolution;
+  let im_max = center.im() + half_size * resolution;
 
   println!("re = {re_min}..{re_max}, im = {im_min}..{im_max}");
+
+  let (tx, rx) = mpsc::channel::<(u32, Vec<Rgb<u8>>)>();
+  let jh = spawn(move || {
+    let mut image = RgbImage::new(size, size);
+    for (x, stripe) in rx {
+      for (y, pixel) in stripe.into_iter().enumerate() {
+        image.put_pixel(x, y as u32, pixel);
+      }
+    }
+    image
+  });
 
   let coords = |x: u32, y: u32| {
     let re = re_min + (x as f64 * resolution);
@@ -34,12 +45,14 @@ fn main() -> Result<()> {
     Complex(re, im)
   };
 
-  (0..width).into_par_iter().for_each(|x| {
-    for y in 0..height {
-      let pixel = mandelbrot(coords(x, y)).into();
-      image.lock().unwrap().put_pixel(x as u32, y as u32, pixel);
-    }
+  (0..size).into_par_iter().for_each(|x| {
+    let stripe: Vec<Rgb<u8>> = (0..size).map(|y| mandelbrot(coords(x, y)).into()).collect();
+    tx.send((x, stripe)).unwrap();
   });
+
+  drop(tx);
+
+  let image = jh.join().unwrap();
 
   /*
   for x in 0..width {
@@ -52,7 +65,7 @@ fn main() -> Result<()> {
     }
   }*/
 
-  image.lock().unwrap().save("image.png")?;
+  image.save("image.png")?;
 
   println!("Finished in {}", start.elapsed().display());
   Ok(())
@@ -63,7 +76,7 @@ enum FractalPixel {
   Converges(()),
 }
 
-const MAX_ITERS: usize = 4096;
+const MAX_ITERS: usize = 2048;
 
 impl From<FractalPixel> for Rgb<u8> {
   fn from(value: FractalPixel) -> Self {
@@ -72,9 +85,9 @@ impl From<FractalPixel> for Rgb<u8> {
         let s = iters as f32 / MAX_ITERS as f32;
         let v = 1.0 - (PI * s).cos().powf(2.0);
 
-        let l = 75.0 - (75.0 * v);
+        let l = 60.0 - (40.0 * v);
         let c = 28.0 + (75.0 - (75.0 * v));
-        let h = (360.0 * s).powf(1.5) % 360.0;
+        let h = (240.0 + (360.0 * s).powf(2.0)) % 360.0;
         let lch = OpaqueColor::<Lch>::new([l, c, h]);
         let rgb = lch.to_rgba8();
 
